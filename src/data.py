@@ -9,7 +9,11 @@ import glob
 import os
 import threading
 
+import scipy
+import numpy as np
 import sklearn.model_selection
+
+from keras import backend as K
 
 import settings
 import utils
@@ -168,6 +172,9 @@ class Iterator(object):
         self.lock = threading.Lock()
         self.index_generator = self._flow_index(n, batch_size, shuffle, seed)
 
+    def reset(self):
+        self.batch_index = 0
+
     def _flow_index(self, n, batch_size=32, shuffle=False, seed=None):
         # Ensure self.batch_index is 0.
         self.reset()
@@ -199,8 +206,40 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 class DataIterator(Iterator):
-    def __init__(self, images, data_transformation, batch_size, shuffle, seed):
-        super(DataIterator, self).__init__(len(images), batch_size, shuffle, seed)
+    def __init__(self, data, data_transformation, batch_size, shuffle, seed):
+        self.data = data
+        self.data_transformation = data_transformation
+        super(DataIterator, self).__init__(len(data), batch_size, shuffle, seed)
+
+    def next(self):
+        # Only keep index advancing under lock
+        with self.lock:
+            index_array, current_index, current_batch_size = next(self.index_generator)
+
+        batch_x = None
+        batch_y = None
+
+        for i, j in enumerate(index_array):
+            # i is the batch index (0 to batch_size)
+            # j is the index of the data to put at this batch index
+            d = self.data[j]
+            if self.data_transformation is not None:
+                d = self.data_transformation.apply(d)
+            if batch_x == None:
+                batch_x = np.zeros(tuple([current_batch_size] + list(d['x'].shape)), dtype=K.floatx())
+                    
+            batch_x[i] = d['x']
+
+            if 'y' in d:
+                if batch_y == None:
+                    batch_y = np.zeros(current_batch_size)
+
+                batch_y[i] = d['y']
+
+        if batch_y:
+            return batch_x, batch_y
+        else:
+            return batch_x
 
 class Transformation(object):
     """
@@ -209,25 +248,42 @@ class Transformation(object):
 
     next = None
 
+    def __init__(self, dataTransformation = None):
+        if dataTransformation is not None:
+            self.chain(dataTransformation)
+
     def chain(self, dataTransformation):
-        self.next = dataTransformation
+        if self.next is None:
+            self.next = dataTransformation
+        else:
+            self.next.chain(dataTransformation)
+        return self
 
     def apply(self, data):
-        d = self.transform(data)
-        if self.next:
+        d = self._transform(data)
+        if self.next is not None:
             d = self.next.apply(d)
         return d
 
     @abc.abstractmethod
-    def transform(self, data):
+    def _transform(self, data):
         pass
+
+class LoadTransformation(Transformation):
+    """
+    Transformation for the initial loading of the data
+    """
+
+    def _transform(self, data):
+        data['x'] = data['x']()
+        return data
 
 class IdentityTransformation(Transformation):
     """
     The identity transformation.
     """
 
-    def transform(self, data):
+    def _transform(self, data):
         return data
 
 class AugmentationTransformation(Transformation):
@@ -235,7 +291,9 @@ class AugmentationTransformation(Transformation):
     Data augmentor augmentation.
     """
 
-    def __init__(self, store_original = False):
+    def __init__(self, dataTransformation = None, store_original = False):
+        super(AugmentationTransformation, self).__init__(dataTransformation)
+
         import augmentor
         from keras.preprocessing.image import ImageDataGenerator
 
@@ -255,7 +313,7 @@ class AugmentationTransformation(Transformation):
         
         self.augm = augmentor.Augmentor(imagegen) 
 
-    def transform(self, data):
+    def _transform(self, data):
         if self.store_original: 
             data['m']['orig_x'] = data['x']
 
