@@ -2,6 +2,7 @@
 Module containing the data loading functionality.
 """
 
+import abc
 import collections
 import csv
 import glob
@@ -198,5 +199,65 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 class DataIterator(Iterator):
-    def __init__(self, images):
-        super(DataIterator, self).__init__(len(images))
+    def __init__(self, images, data_transformation, batch_size, shuffle, seed):
+        super(DataIterator, self).__init__(len(images), batch_size, shuffle, seed)
+
+class Transformation(object):
+    """
+    Abstract class for chainable data transformations.
+    """
+
+    next = None
+
+    def chain(self, dataTransformation):
+        self.next = dataTransformation
+
+    def apply(self, data):
+        d = self.transform(data)
+        if self.next:
+            d = self.next.apply(d)
+        return d
+
+    @abc.abstractmethod
+    def transform(self, data):
+        pass
+
+class IdentityTransformation(Transformation):
+    """
+    The identity transformation.
+    """
+
+    def transform(self, data):
+        return data
+
+class AugmentationTransformation(Transformation):
+    """
+    Data augmentor augmentation.
+    """
+
+    def __init__(self, store_original = False):
+        import augmentor
+        from keras.preprocessing.image import ImageDataGenerator
+
+        self.store_original = store_original
+
+        imagegen = ImageDataGenerator(
+                rescale = None,
+                rotation_range = settings.AUGMENTATION_ROTATION_RANGE,
+                shear_range = settings.AUGMENTATION_SHEAR_RANGE,
+                zoom_range = settings.AUGMENTATION_ZOOM_RANGE,
+                width_shift_range = settings.AUGMENTATION_WIDTH_SHIFT_RANGE,
+                height_shift_range = settings.AUGMENTATION_HEIGHT_SHIFT_RANGE,
+                horizontal_flip = settings.AUGMENTATION_HORIZONTAL_FLIP,
+                vertical_flip = settings.AUGMENTATION_VERTICAL_FLIP,
+                channel_shift_range = settings.AUGMENTATION_CHANNEL_SHIFT_RANGE
+                )  
+        
+        self.augm = augmentor.Augmentor(imagegen) 
+
+    def transform(self, data):
+        if self.store_original: 
+            data['m']['orig_x'] = data['x']
+
+        data['x'] = self.augm.augment(data['x'])
+        return data
