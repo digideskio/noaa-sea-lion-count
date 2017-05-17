@@ -226,13 +226,13 @@ class DataIterator(Iterator):
             d = self.data[j]
             if self.data_transformation is not None:
                 d = self.data_transformation.apply(d)
-            if batch_x == None:
+            if batch_x is None:
                 batch_x = np.zeros(tuple([current_batch_size] + list(d['x'].shape)), dtype=K.floatx())
                     
             batch_x[i] = d['x']
 
             if 'y' in d:
-                if batch_y == None:
+                if batch_y is None:
                     batch_y = np.zeros(current_batch_size)
 
                 batch_y[i] = d['y']
