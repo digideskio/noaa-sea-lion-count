@@ -241,7 +241,7 @@ class DataIterator(Iterator):
         else:
             return batch_x
 
-class Transformation(object):
+class Transformer(object):
     """
     Abstract class for chainable data transformations.
     """
@@ -269,7 +269,15 @@ class Transformation(object):
     def _transform(self, data):
         pass
 
-class LoadTransformation(Transformation):
+class IdentityTransformer(Transformer):
+    """
+    The identity transformation.
+    """
+
+    def _transform(self, data):
+        return data
+
+class LoadTransformer(Transformer):
     """
     Transformation for the initial loading of the data
     """
@@ -278,21 +286,13 @@ class LoadTransformation(Transformation):
         data['x'] = data['x']()
         return data
 
-class IdentityTransformation(Transformation):
-    """
-    The identity transformation.
-    """
-
-    def _transform(self, data):
-        return data
-
-class AugmentationTransformation(Transformation):
+class AugmentationTransformer(Transformer):
     """
     Data augmentor augmentation.
     """
 
     def __init__(self, dataTransformation = None, store_original = False):
-        super(AugmentationTransformation, self).__init__(dataTransformation)
+        super(AugmentationTransformer, self).__init__(dataTransformation)
 
         import augmentor
         from keras.preprocessing.image import ImageDataGenerator
