@@ -10,6 +10,7 @@ import os
 import threading
 
 import scipy
+import scipy.misc
 import numpy as np
 import sklearn.model_selection
 
@@ -246,11 +247,8 @@ class Transformer(object):
     Abstract class for chainable data transformations.
     """
 
-    next = None
-
-    def __init__(self, dataTransformation = None):
-        if dataTransformation is not None:
-            self.chain(dataTransformation)
+    def __init__(self, next = None):
+        self.next = next
 
     def chain(self, dataTransformation):
         if self.next is None:
@@ -277,6 +275,17 @@ class IdentityTransformer(Transformer):
     def _transform(self, data):
         return data
 
+class ResizeTransformer(Transformer):
+
+    def __init__(self, shape, *args, **kwargs):
+        super(ResizeTransformer, self).__init__(*args, **kwargs)
+
+        self.shape = shape
+
+    def _transform(self, data):
+        data['x'] = scipy.misc.imresize(data['x'], self.shape)
+        return data
+
 class LoadTransformer(Transformer):
     """
     Transformation for the initial loading of the data
@@ -291,8 +300,8 @@ class AugmentationTransformer(Transformer):
     Data augmentor augmentation.
     """
 
-    def __init__(self, dataTransformation = None, store_original = False):
-        super(AugmentationTransformer, self).__init__(dataTransformation)
+    def __init__(self, store_original = False, *args, **kwargs):
+        super(AugmentationTransformer, self).__init__(*args, **kwargs)
 
         import augmentor
         from keras.preprocessing.image import ImageDataGenerator

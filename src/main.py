@@ -14,8 +14,8 @@ def run():
     train_data = loader.load_original_images()
     train_val_split = loader.train_val_split(train_data)
 
-    transform = data.LoadTransformer(data.AugmentationTransformer())
-    iterator = data.DataIterator(train_val_split['train'], transform, batch_size = 8, shuffle = True, seed = 42);
+    transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer((2000,2000,3))))
+    iterator = data.DataIterator(train_val_split['train'], transform, batch_size = 8, shuffle = True, seed = 42)
 
     batch = next(iterator)
 
