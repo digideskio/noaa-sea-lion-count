@@ -24,6 +24,8 @@ TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv"
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
 TRAIN_MISMATACHED_CSV         = os.path.join(TRAIN_LABELS_DIR, "mismatched.csv")
 
+TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
+
 # Logging
 ## create logger
 logger = logging.getLogger('noaa')

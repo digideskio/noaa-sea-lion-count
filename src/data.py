@@ -5,6 +5,7 @@ Module containing the data loading functionality.
 import collections
 import csv
 import os
+import threading
 
 import settings
 import utils
@@ -14,11 +15,11 @@ logger = settings.logger.getChild('data')
 class Loader:
 
     def __init__(self):
-        self.train_counts = self._load_train_counts()
-        self.train_coordinates = self._load_train_coordinates()
-        self.train_mismatched = self._load_train_mismatched()
+        self.train_original_counts = self._load_train_original_counts()
+        self.train_original_coordinates = self._load_train_original_coordinates()
+        self.train_original_mismatched = self._load_train_original_mismatched()
 
-    def _load_train_counts(self):
+    def _load_train_original_counts(self):
         """
         Load the counts CSV for the training dataset.
         Turn it into a dictionary of dictionaries of counts.
@@ -38,7 +39,7 @@ class Loader:
             d = {row['train_id']: utils.remove_key_from_dict(row, 'train_id') for row in csv.DictReader(file)}
         return d
 
-    def _load_train_coordinates(self):
+    def _load_train_original_coordinates(self):
         """
         Load the coordinates CSV for the training dataset.
         Turn it into a dictionary of lists of coordinates and labels.
@@ -60,7 +61,7 @@ class Loader:
             [d[utils.get_file_name_part(row['filename'])].append(utils.remove_key_from_dict(row, 'id', 'filename')) for row in csv.DictReader(file)]
         return dict(d)
 
-    def _load_train_mismatched(self):
+    def _load_train_original_mismatched(self):
         """
         Load the mismatched image IDs CSV for the training dataset.
         Turn it into a dictionary of booleans (all true) for fast querying via "in".
@@ -72,11 +73,112 @@ class Loader:
             d= {row['train_id']: True for row in csv.DictReader(file)}
         return d
 
-    def get_train_counts(self):
-        return self.train_counts
+    def get_train_original_counts(self):
+        return self.train_original_counts
 
-    def get_train_coordinates(self):
-        return self.train_coordinates
+    def get_train_original_coordinates(self):
+        return self.train_original_coordinates
 
-    def get_train_mismatched(self):
-        return self.train_mismatched
+    def get_train_original_mismatched(self):
+        return self.train_original_mismatched
+
+    def load_original_images(self, dataset = "train"):
+        """
+        Load the data
+        """
+        x = []
+        m = []
+
+        if dataset == "train":
+
+            # Get all train original images
+            filenames = sorted(glob.glob(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, "*.jpg")))
+            for filename in filenames:
+                name = self.get_file_name_part(filename)
+
+                if name in self.train_original_mismatched:
+                    # Skip images marked as mismatched
+                    continue
+
+                meta = {
+                    'filename': name,
+                    'coordinates': self.train_original_coordinates[name],
+                    'counts': self.train_original_counts[name]
+                }
+
+                x.append((lambda filename: lambda: self.load(filename))(filename))
+                m.append(meta)
+
+        elif dataset == "test_st1":
+
+            # Get all test original images
+            filenames = sorted(glob.glob(os.path.join(settings.TEST_ORIGINAL_IMAGES_DIR, "*.jpg")))
+            for filename in filenames:
+                name = self.get_file_name_part(filename)
+
+                if name in self.train_original_mismatched:
+                    # Skip images marked as mismatched
+                    continue
+
+                meta = {
+                    'filename': name
+                }
+
+                x.append((lambda filename: lambda: self.load(filename))(filename))
+                m.append(meta)
+
+        return {'x': x, 'm': m}
+
+    def load(self, filename):
+        """
+        Load an image into a scipy ndarray
+
+        :param filename: The name of the file to load
+        :return: The image as an ndarray
+        """
+        return scipy.misc.imread(filename).astype("float32")
+
+class Iterator(object):
+    # See: https://github.com/fchollet/keras/blob/master/keras/preprocessing/image.py
+    def __init__(self, n, batch_size, shuffle, seed):
+        self.n = n
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.batch_index = 0
+        self.total_batches_seen = 0
+        self.lock = threading.Lock()
+        self.index_generator = self._flow_index(n, batch_size, shuffle, seed)
+
+    def _flow_index(self, n, batch_size=32, shuffle=False, seed=None):
+        # Ensure self.batch_index is 0.
+        self.reset()
+        while 1:
+            if seed is not None:
+                np.random.seed(seed + self.total_batches_seen)
+            if self.batch_index == 0:
+                index_array = np.arange(n)
+                if shuffle:
+                    index_array = np.random.permutation(n)
+
+            current_index = (self.batch_index * batch_size) % n
+            if n > current_index + batch_size:
+                current_batch_size = batch_size
+                self.batch_index += 1
+            else:
+                current_batch_size = n - current_index
+                self.batch_index = 0
+            self.total_batches_seen += 1
+            yield (index_array[current_index: current_index + current_batch_size],
+                   current_index, current_batch_size)
+
+    def __iter__(self):
+        # Needed if we want to do something like:
+        # for x, y in data_gen.flow(...):
+        return self
+
+    def __next__(self, *args, **kwargs):
+        return self.next(*args, **kwargs)
+
+class DataIterator(Iterator):
+    def __init__(self, x, m):
+        super(DataIterator, self).__init__(50)
