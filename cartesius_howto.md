@@ -1,16 +1,16 @@
 # How to use surfsara
 In this document I will briefly explain how to use cartesius in surfsara.
 
-### SSH client
+## SSH client
 You will need an SSH client, I assume that everyone is familiar with these tool so I will just mention that if you are using windows you may want to use Cygwin, Bash on Ubuntu on Windows (this is the one I would recommend) or Putty. If you are in linux just use the ssh command directly.
 
-### Get access to the login node
+## Get access to the login node
 Surfsara has a whitelisted ip list from which users can access to their servers. Big possibility your home ip is not included in this list, but the university one is. I know two solutions for getting access to their servers:
 - Open your ssh client and type `ssh -t vgarciacazorla@lilo.science.ru.nl ssh gdemo013@cartesius.surfsara.nl` (with your uni and cartesius usernames)
 - Use a VPN to connect to uni and then just type `ssh gdemo013@cartesius.surfsara.nl`
 
 After any of this steps just type your password and you will be already in the login node of cartesius.
-### Run stuff
+## Run stuff
 The login node is only used to prepare averything (code, data etc.) but to run the actual experiments we need to get access to a node with gpus. So the way we do that is creating a file (running ` nano batch_job` for example) inside the login node with the following content:
 ```
 #!/bin/sh
