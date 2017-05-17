@@ -4,8 +4,11 @@ Module containing the data loading functionality.
 
 import collections
 import csv
+import glob
 import os
 import threading
+
+import sklearn.model_selection
 
 import settings
 import utils
@@ -86,15 +89,15 @@ class Loader:
         """
         Load the data
         """
-        x = []
-        m = []
+        
+        images = []
 
         if dataset == "train":
 
             # Get all train original images
             filenames = sorted(glob.glob(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, "*.jpg")))
             for filename in filenames:
-                name = self.get_file_name_part(filename)
+                name = utils.get_file_name_part(filename)
 
                 if name in self.train_original_mismatched:
                     # Skip images marked as mismatched
@@ -102,12 +105,12 @@ class Loader:
 
                 meta = {
                     'filename': name,
-                    'coordinates': self.train_original_coordinates[name],
-                    'counts': self.train_original_counts[name]
+                    'coordinates': self.train_original_coordinates[name] if name in self.train_original_coordinates else [],
+                    'counts': self.train_original_counts
                 }
 
-                x.append((lambda filename: lambda: self.load(filename))(filename))
-                m.append(meta)
+                images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
+                               'm': meta})
 
         elif dataset == "test_st1":
 
@@ -124,10 +127,22 @@ class Loader:
                     'filename': name
                 }
 
-                x.append((lambda filename: lambda: self.load(filename))(filename))
-                m.append(meta)
+                images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
+                               'm': meta})
 
-        return {'x': x, 'm': m}
+        return images
+
+    def train_val_split(self, data, split_ratio = 0.7):
+        """
+        Split a dataset into a training and validation set.
+
+        :param data: The list of data to split
+        :param split_ratio: The ratio to use, e.g. 0.7 means 70% of the data will be used for training
+        :return: A dictionary of training and validation data {'train': ..., 'validate': ...}
+        """
+        data_train, data_val = sklearn.model_selection.train_test_split(data, train_size = split_ratio, random_state = 42)
+        return {'train': data_train, 'validate': data_val}
+
 
     def load(self, filename):
         """
@@ -180,5 +195,5 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 class DataIterator(Iterator):
-    def __init__(self, x, m):
-        super(DataIterator, self).__init__(50)
+    def __init__(self, images):
+        super(DataIterator, self).__init__(len(images))
