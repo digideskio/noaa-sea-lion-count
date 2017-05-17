@@ -4,7 +4,6 @@ Module to train and use neural networks.
 import os
 import abc
 import functools
-import pipeline
 import settings
 import keras
 from keras.applications import ResNet50
@@ -16,7 +15,6 @@ import scipy.misc
 import skimage.transform
 import numpy as np
 import metrics
-import customlayers
 
 PRETRAINED_MODELS = {
     "vgg16":     VGG16,
@@ -301,13 +299,7 @@ class LearningFullyConvolutional(TransferLearning):
         # A 1x1 convolution, with the same number of output channels as there are classes
         fullyconv = keras.layers.Convolution2D(num_classes, 1, 1, name="fullyconv")(x)
 
-        if num_classes > 1:
-            # Softmax on last axis of tensor to normalize the class
-            # predictions in each spatial area
-            output = customlayers.SoftmaxMap(axis=-1)(fullyconv)
-        else:
-            # output = fullyconv
-            output = keras.layers.Activation("sigmoid")(fullyconv)
+        output = keras.layers.Activation("sigmoid")(fullyconv)
 
         # This is fully convolutional model:
         self.model = keras.models.Model(input=self.base_model.input, output=output)
