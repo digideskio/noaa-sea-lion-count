@@ -19,8 +19,8 @@ def run():
 
     batch = next(iterator)
 
-    print("First in batch: %s" % batch[0]['m'])
-    print("Batch size: %s" % len(batch))
+    print("First in batch: {0}".format(batch[0].shape))
+    print("Batch size: {0}".format(len(batch)))
     
 
 if __name__ == "__main__":
