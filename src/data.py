@@ -93,6 +93,7 @@ class Loader:
         images = []
 
         if dataset == "train":
+            logger.debug('Loading train set original images')
 
             # Get all train original images
             filenames = sorted(glob.glob(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, "*.jpg")))
@@ -113,6 +114,7 @@ class Loader:
                                'm': meta})
 
         elif dataset == "test_st1":
+            logger.debug('Loading stage 1 test set original images')
 
             # Get all test original images
             filenames = sorted(glob.glob(os.path.join(settings.TEST_ORIGINAL_IMAGES_DIR, "*.jpg")))
@@ -151,6 +153,7 @@ class Loader:
         :param filename: The name of the file to load
         :return: The image as an ndarray
         """
+        logger.debug('Loading image from disk: %s' % filename)
         return scipy.misc.imread(filename).astype("float32")
 
 class Iterator(object):
