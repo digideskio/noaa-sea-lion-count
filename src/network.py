@@ -25,50 +25,34 @@ PRETRAINED_MODELS = {
 }
 
 class Learning:
-    def __init__(self, class_balance_method = "weights", mini_batch_size = 32, data_type = "original", prediction_class_type = "multi", class_filter = [], tensor_board = True, validate = True):
+    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", mini_batch_size = 32, tensor_board = True, validate = True):
         """
-        :param class_balance_method: None, "weights", or "batch"
         :param prediction_class_type: "single" or "multi"
         """
 
         self.model = None
         self.prediction_class_type = prediction_class_type
-        self.class_balance_method = class_balance_method
         self.mini_batch_size = mini_batch_size
         self.tensor_board = tensor_board
         self.validate = validate
 
-        self.pl = pipeline.Pipeline(data_type = data_type, class_filter = class_filter)
-
-        self.generators = {}
-        self.generator_chain = [
-            self.pl.augmented_generator,
-            self.pl.imagenet_preprocess_generator,
-            self.pl.drop_meta_generator,
-            self.pl.one_hot_encoding_generator,
-            functools.partial(self.pl.mini_batch_generator, mini_batch_size = mini_batch_size),
-            self.pl.to_numpy_arrays_generator
-        ]
-
-    def set_full_generator(self):
-        """
-        Add a data augmented generator over all dataset (without train
-        validation splitting) to the generators dictionary
-        """
-        self.generators = self.pl.data_generator_builder(
-            *self.generator_chain,
-            infinite = True, shuffle = True)
-
-    def set_train_val_generators(self):
-        """
-        Add the train and validation data augmented generators to the 
-        generators dictionary
-        """
-        self.generators = self.pl.train_and_validation_data_generator_builder(
-            *self.generator_chain,
-            balance = self.class_balance_method == "batch",
-            infinite = True,
-            shuffle = True)
+        logger.info("Starting...")
+        loader = data.Loader()
+        transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(input_shape)))
+        
+        if data_type == 'original':
+            train_data = loader.load_original_images()
+        elif data_type == 'sea_lion_crops':
+            throw(NotImplemented('Cropping still has to be implemented.'))
+        elif data_type == 'region_crops':
+            throw(NotImplemented('Cropping still has to be implemented.'))
+        
+        if validate:
+            train_val_split = loader.train_val_split(train_data)
+            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
+            self.val_iterator = data.DataIterator(train_val_split['test'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
+        else:
+            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
 
     @abc.abstractmethod
     def build(self):
@@ -84,20 +68,11 @@ class Learning:
         :param weights_name: name for the h5py weights file to be written in the output folder
         """
         
-        if self.validate:
-            self.set_train_val_generators()
-        else:
-            self.set_full_generator()
-
-        if self.class_balance_method == "weights":
-            # Calculate class weights
-            class_weights = self.pl.class_reciprocal_weights()
-
         callbacks_list = []
 
         # Create weight output dir if it does not exist
-        if not os.path.exists(settings.WEIGHTS_OUTPUT_DIR):
-            os.makedirs(settings.WEIGHTS_OUTPUT_DIR)
+        if not os.path.exists(settings.WEIGHTS_DIR):
+            os.makedirs(settings.WEIGHTS_DIR)
 
         # Save the model with best validation accuracy during training
         weights_name = weights_name + ".e{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
@@ -121,12 +96,11 @@ class Learning:
 
         # Train
         self.model.fit_generator(
-            generator = self.generators['train'],
+            generator = self.iterator,
             steps_per_epoch = int(949/self.mini_batch_size), 
             epochs = epochs,
-            validation_data = self.generators['validate'] if self.validate else None,
+            validation_data = self.val_iterator if self.validate else None,
             validation_steps = int(0.3*949/self.mini_batch_size) if self.validate else None,
-            class_weight = class_weights if self.class_balance_method == "weights" else None,
             workers = 2,
             callbacks = callbacks_list)
 
@@ -143,7 +117,7 @@ class TransferLearning(Learning):
         self.base_model_name = None
         self.model_name = None
 
-    def extend(self, mode='avgdense'):
+    def extend(self):
         """
         Extend the model by stacking new (dense) layers on top of the network
         """
@@ -254,18 +228,9 @@ class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
 
     def __init__(self, *args, **kwargs):
         """
-        TransferLearningLocalization initialization.
+        TransferLearningSeaLionOrNoSeaLion initialization.
         """
         super().__init__(*args, **kwargs)
-
-        self.generator_chain = [
-            self.pl.augmented_generator,
-            self.pl.imagenet_preprocess_generator,
-            self.pl.drop_meta_generator,
-            self.pl.class_mapper_generator,
-            functools.partial(self.pl.mini_batch_generator, mini_batch_size = self.mini_batch_size),
-            self.pl.to_numpy_arrays_generator
-        ]
 
 
     def extend(self):
@@ -285,7 +250,7 @@ class LearningFullyConvolutional(TransferLearning):
 
     def __init__(self, *args, **kwargs):
         """
-        TransferLearningLocalization initialization.
+        LearningFullyConvolutional initialization.
         """
         super().__init__(*args, **kwargs)
 
