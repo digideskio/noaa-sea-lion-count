@@ -67,7 +67,7 @@ class Loader:
         logger.debug('Loading train image coordinates')
         d = collections.defaultdict(list)
         with open(settings.TRAIN_COORDINATES_CSV, 'r') as file:
-            [d[utils.get_file_name_part(row['filename'])].append(utils.remove_key_from_dict(row, 'id', 'filename')) for row in csv.DictReader(file)]
+            [d[utils.get_file_name_part(row['filename'])].append(utils.remove_key_from_dict(row, '', 'id', 'filename')) for row in csv.DictReader(file)]
         return dict(d)
 
     def _load_train_original_mismatched(self):
@@ -78,8 +78,8 @@ class Loader:
         :return: A dictionary containing entries for images that are mismatched.
         """
         logger.debug('Loading train image mismatch labels')
-        with open(settings.TRAIN_MISMATACHED_CSV, 'r') as file:
-            d= {row['train_id']: True for row in csv.DictReader(file)}
+        with open(settings.TRAIN_MISMATCHED_CSV, 'r') as file:
+            d = {row['train_id']: True for row in csv.DictReader(file)}
         return d
 
     def get_train_original_counts(self):

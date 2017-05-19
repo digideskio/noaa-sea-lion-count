@@ -3,18 +3,19 @@ Module to train and use neural networks.
 """
 import os
 import abc
+import data
 import functools
-import settings
 import keras
 from keras.applications import ResNet50
 from keras.applications import InceptionV3
 from keras.applications import Xception # TensorFlow ONLY
 from keras.applications import VGG16
 from keras.applications import VGG19
-import scipy.misc
-import skimage.transform
-import numpy as np
 import metrics
+import numpy as np
+import scipy.misc
+import settings
+import skimage.transform
 
 PRETRAINED_MODELS = {
     "vgg16":     VGG16,
@@ -36,7 +37,7 @@ class Learning:
         self.tensor_board = tensor_board
         self.validate = validate
 
-        logger.info("Starting...")
+        settings.logger.info("Starting...")
         loader = data.Loader()
         transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(input_shape)))
         
@@ -50,7 +51,7 @@ class Learning:
         if validate:
             train_val_split = loader.train_val_split(train_data)
             self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
-            self.val_iterator = data.DataIterator(train_val_split['test'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
+            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
         else:
             self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
 
@@ -76,7 +77,7 @@ class Learning:
 
         # Save the model with best validation accuracy during training
         weights_name = weights_name + ".e{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
-        weights_path = os.path.join(settings.WEIGHTS_OUTPUT_DIR, weights_name)
+        weights_path = os.path.join(settings.WEIGHTS_DIR, weights_name)
         checkpoint = keras.callbacks.ModelCheckpoint(
             weights_path,
             monitor = 'val_loss',

@@ -15,7 +15,8 @@ def remove_key_from_dict(dict, *keys):
     d = dict.copy()
     
     for key in keys:
-        del d[key]
+        if key in d:
+            del d[key]
     return d
 
 def get_file_name_part(full_path):

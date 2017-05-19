@@ -47,7 +47,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
     """
 
-    import network
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
     
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
@@ -57,11 +57,11 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
         input_shape = (300,300,3)
 
     if task == 'type':
-        tl = network.TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
+        tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = network.TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
 
-    tl.build(network, input_shape = input_shape, summary = False)
+    tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.train_top(epochs = 100)
 
 def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
@@ -76,7 +76,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
     """
 
-    import network
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
 
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
@@ -86,11 +86,11 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
         input_shape = (300,300,3)
     
     if task == 'type':
-        tl = network.TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
+        tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = network.TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
 
-    tl.build(network, input_shape = (300,300,3), summary = False)
+    tl.build(network.lower(), input_shape = (300,300,3), summary = False)
     tl.fine_tune_extended(
         epochs = 100,
         input_weights_name = NETWORKS[network.lower()][1],
