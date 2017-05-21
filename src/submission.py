@@ -23,4 +23,5 @@ def generate_submission(counts, suffix = ""):
         submwriter.writerow(categories)
        
         for id in sorted(counts.keys()):
-            submwriter.writerow([id] + counts[id])
+            row = [id] + [int(round(count)) for count in counts[id]]
+            submwriter.writerow(row)
