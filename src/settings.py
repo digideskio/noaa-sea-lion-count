@@ -22,7 +22,7 @@ TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv")
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
-TRAIN_MISMATCHED_CSV         = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainImages.txt")
+TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainImages.txt")
 
 TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
 
@@ -36,6 +36,7 @@ IMAGENET_CLSLOC_PATH = os.path.join(IMAGENET_DIR, "meta_clsloc.mat")
 WEIGHTS_DIR = os.path.join(OUTPUT_DIR, "weights", strftime("%Y%m%dT%H%M%S"))
 CROPS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "crops", strftime("%Y%m%dT%H%M%S"))
 TENSORBOARD_LOGS_DIR = os.path.join(DATA_DIR, 'tb_logs')
+SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 
 # Data augmentation settings
 TRANSFORMATION_RESIZE_TO = (2000,2000,3)
@@ -71,3 +72,6 @@ ch.setFormatter(formatter)
 
 ## add ch to logger
 logger.addHandler(ch)
+
+def get_timestamp():
+    return strftime("%Y%m%dT%H%M%S")
