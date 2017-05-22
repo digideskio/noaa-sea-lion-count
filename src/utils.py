@@ -30,3 +30,14 @@ def get_file_name_part(full_path):
     """
     base = os.path.basename(full_path)
     return os.path.splitext(base)[0]
+
+def crop_image(image, coordinates, crop_size):    
+    """
+    Returns a square shaped crop from an image.
+    
+    :param image: The image from which to take the crop
+    :param coordinates: Tuple that contains the left upper corner coordinates of the crop
+    :param crop_size: The size of the desired crop
+    """
+    x_coordinate, y_coordinate = coordinates[0], coordinates[1]
+    return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size, :]
