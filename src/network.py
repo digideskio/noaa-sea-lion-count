@@ -119,6 +119,7 @@ class TransferLearning(Learning):
         super().__init__(*args, **kwargs)
 
         self.base_model = None
+        self.model = None
         self.architecture = None
         self.model_name = None
         
@@ -138,6 +139,27 @@ class TransferLearning(Learning):
         print('\t',sum(trainable),'trainable layers: from',tr_pos[0],'to',tr_pos[-1])
         print('Trainable layer map:',''.join([str(int(l.trainable)) for l in self.model.layers]))
         
+    def unfreeze_last_pretrained_layers(self, n_layers = None, percentage = None):
+        '''
+        Un freeze some of the last pretrained layers of the model
+        '''
+        assert n_layers or percentage
+        if percentage:
+            assert percentage < 1
+            n_layers = int(float(len(self.base_model.layers))*percentage)
+        print('Freezing last',n_layers,'of the pretrained model',self.arch,'...')
+        for layer in self.base_model.layers[-n_layers:]:
+            layer.trainable = True
+            
+    def freeze_all_pretrained_layers(self):
+        '''
+        Freeze all the pretrained layers. Note: a "pretrained layer" is named as such
+        even after fine-tunning it
+        '''
+        print('Freezing all pretrained layers...')
+        for layer in self.base_model.layers:
+            layer.trainable = False
+            
     def extend(self):
         """
         Extend the model by stacking new (dense) layers on top of the network
@@ -240,7 +262,7 @@ class TransferLearning(Learning):
         # Train
         self.train(epochs, weights_name)
 
-class TransferLearningBinary(TransferLearning):
+class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
     '''
     This class should be used for "Sea Lion or no Sea Lion" network and
     for "Herd or no Herd" network.    
@@ -248,7 +270,7 @@ class TransferLearningBinary(TransferLearning):
 
     def __init__(self, *args, **kwargs):
         """
-        TransferLearningBinary initialization.
+        TransferLearningSeaLionOrNoSeaLion initialization.
         """
         super().__init__(*args, **kwargs)
 
