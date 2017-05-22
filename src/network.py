@@ -94,17 +94,21 @@ class Learning:
                 write_graph = True,
                 write_images = True)
             callbacks_list.append(tf_logs)
-
+            
+        #TODO get unqie_instances automatically 
+        unique_instances = 949
         # Train
         self.model.fit_generator(
             generator = self.iterator,
-            steps_per_epoch = int(949/self.mini_batch_size), 
+            steps_per_epoch = int(0.7*unique_instances/self.mini_batch_size), 
             epochs = epochs,
             validation_data = self.val_iterator if self.validate else None,
-            validation_steps = int(0.3*949/self.mini_batch_size) if self.validate else None,
+            validation_steps = int(0.3*unique_instances/self.mini_batch_size) if self.validate else None,
             workers = 2,
             callbacks = callbacks_list)
 
+
+        
 
 class TransferLearning(Learning):
 	
@@ -115,9 +119,25 @@ class TransferLearning(Learning):
         super().__init__(*args, **kwargs)
 
         self.base_model = None
-        self.base_model_name = None
+        self.architecture = None
         self.model_name = None
-
+        
+    def print_layers_info(self):
+        '''
+        Prints information about current frozen (non trainable) and unfrozen (trainable)
+        layers
+        '''
+        print(len(self.model.layers),'total layers (',len(self.base_model.layers),\
+            'pretrained and',len(self.model.layers)-len(self.base_model.layers),'new stacked on top)')
+        trainable = [layer.trainable for layer in self.model.layers]
+        non_trainable = [not i for i in trainable]
+        tr_pos = list(np.where(trainable)[0])
+        nontr_pos = list(np.where(non_trainable)[0])
+        if len(nontr_pos) > 0:
+            print('\t',sum(non_trainable),'non-trainable layers: from',nontr_pos[0],'to',nontr_pos[-1])
+        print('\t',sum(trainable),'trainable layers: from',tr_pos[0],'to',tr_pos[-1])
+        print('Trainable layer map:',''.join([str(int(l.trainable)) for l in self.model.layers]))
+        
     def extend(self):
         """
         Extend the model by stacking new (dense) layers on top of the network
@@ -131,28 +151,23 @@ class TransferLearning(Learning):
         # This is the model we will train:
         self.model = keras.models.Model(input=self.base_model.input, output=predictions)
 
-    def build(self, base_model_name, input_shape = None, extended_model_name = None, summary = False):
+    def build(self, architecture, input_shape = None, summary = False):
         """
         Build an extended model. A base model is first loaded disregarding its last layers and afterwards
         some new layers are stacked on top so the resulting model would be applicable to the
         fishering-monitoring problem
         
-        :param base_model_name: model name to load and use as base model (`"vgg16"`,`"vgg19"`,`"inception"`,`"xception"`,`"resnet"`).
+        :param architecture: model name to load and use as base model (`"vgg16"`,`"vgg19"`,`"inception"`,`"xception"`,`"resnet"`).
         :param input_shape: optional shape tuple (see input_shape of argument of base network used in Keras).
-        :param extended_model_name: name for the extended model. It will affect only to the weights file to write on disk
         :param summary: whether to print the summary of the extended model
         """
 
         # Set the base model configuration and extended model name
-        self.base_model_name = base_model_name
-        self.base_model = PRETRAINED_MODELS[self.base_model_name](weights = 'imagenet', include_top = False, input_shape = input_shape)
-        if not extended_model_name:
-            extended_model_name = 'ext_' + base_model_name
-
-        self.model_name = extended_model_name
-
+        self.architecture = architecture
+        self.base_model = PRETRAINED_MODELS[self.architecture](weights = 'imagenet', include_top = False, input_shape = input_shape)
+        
         # Extend the base model
-        print("Building %s using %s as the base model..." % (self.model_name, self.base_model_name))
+        print("Building network using %s as the pretrained architecture..." % (self.architecture))
         self.extend()
         print("Done building the model.")
 
@@ -225,11 +240,15 @@ class TransferLearning(Learning):
         # Train
         self.train(epochs, weights_name)
 
-class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
+class TransferLearningBinary(TransferLearning):
+    '''
+    This class should be used for "Sea Lion or no Sea Lion" network and
+    for "Herd or no Herd" network.    
+    '''
 
     def __init__(self, *args, **kwargs):
         """
-        TransferLearningSeaLionOrNoSeaLion initialization.
+        TransferLearningBinary initialization.
         """
         super().__init__(*args, **kwargs)
 
@@ -360,3 +379,8 @@ class LearningFullyConvolutional(TransferLearning):
         geom_avg_heatmap = np.power(functools.reduce(lambda x, y: x*y, heatmaps), 1.0 / len(heatmaps))
         
         return geom_avg_heatmap
+
+        
+tl = TransferLearningBinary()
+tl.build('xception', input_shape = (300,300,3), summary = False)
+tl.print_layers_info()
