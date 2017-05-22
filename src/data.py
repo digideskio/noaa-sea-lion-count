@@ -13,6 +13,7 @@ import scipy
 import scipy.misc
 import numpy as np
 import sklearn.model_selection
+import pandas as pd
 
 from keras import backend as K
 
@@ -47,7 +48,27 @@ class Loader:
         with open(settings.TRAIN_COUNTS_CSV, 'r') as file:
             d = {row['train_id']: utils.remove_key_from_dict(row, 'train_id') for row in csv.DictReader(file)}
         return d
-
+        
+    def add_image_size_to_train_counts(self):
+        '''
+        Adds a tuple indicating image size to the file counts.csv
+        '''
+        logger.debug('Adding image sizes to train image counts file')
+        df = pd.read_csv(os.path.join(settings.TRAIN_LABELS_DIR,'counts.csv'))
+        
+        def image_size_reader(train_id):
+            filename = str(train_id)+ '.jpg'
+            image = self.load(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR,filename))
+            size = image.shape[:2]
+            return size 
+            
+        df['size'] = df['train_id'].map(image_size_reader)
+        
+        #Overwrite counts.csv
+        df.to_csv(os.path.join(settings.TRAIN_LABELS_DIR,'counts.csv'),index = False)
+        #Update attribute
+        self.train_original_counts = self._load_train_original_counts()
+        
     def _load_train_original_coordinates(self):
         """
         Load the coordinates CSV for the training dataset.
@@ -328,3 +349,6 @@ class AugmentationTransformer(Transformer):
 
         data['x'] = self.augm.augment(data['x'])
         return data
+
+l = Loader()
+l.add_image_size_to_train_counts()
