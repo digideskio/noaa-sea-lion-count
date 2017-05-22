@@ -349,6 +349,3 @@ class AugmentationTransformer(Transformer):
 
         data['x'] = self.augm.augment(data['x'])
         return data
-
-l = Loader()
-l.add_image_size_to_train_counts()
