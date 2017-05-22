@@ -380,7 +380,3 @@ class LearningFullyConvolutional(TransferLearning):
         
         return geom_avg_heatmap
 
-        
-tl = TransferLearningBinary()
-tl.build('xception', input_shape = (300,300,3), summary = False)
-tl.print_layers_info()
