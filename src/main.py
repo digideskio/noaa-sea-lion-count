@@ -62,7 +62,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     elif data_type == 'sea_lion_crops':
         input_shape = (100,100,3)
     elif data_type == 'region_crops':
-        input_shape = (300,300,3)
+        input_shape = (224,224,3)
 
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
@@ -91,7 +91,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     elif data_type == 'sea_lion_crops':
         input_shape = (100,100,3)
     elif data_type == 'region_crops':
-        input_shape = (300,300,3)
+        input_shape = (224,224,3)
     
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
