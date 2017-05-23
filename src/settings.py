@@ -22,7 +22,7 @@ TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 CROPS_INPUT_DIR               = os.path.join(TRAIN_DIR, "crops")
 REGION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "region_crops")
-SEA_LION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
+SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
 
 TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv")
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
