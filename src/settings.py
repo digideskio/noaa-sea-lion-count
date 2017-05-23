@@ -23,6 +23,7 @@ TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv")
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
 TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainImages.txt")
+HERD_CROPS_COORDINATES_CSV    = os.path.join(TRAIN_LABELS_DIR, "herd_crops_coordinates_500px_10m.csv")
 
 TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
 
