@@ -101,7 +101,7 @@ class Learning:
             callbacks_list.append(tf_logs)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 78000
+        unique_instances = 500
         # Train
         self.model.fit_generator(
             generator = self.iterator,
