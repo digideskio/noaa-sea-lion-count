@@ -23,8 +23,16 @@ def test_iterators():
     print('First in batch: {0}'.format(batch[0].shape))
     print('Batch size: {0}'.format(len(batch)))
 
-def generate_crops():
-    throw(NotImplemented('Cropping still has to be implemented.'))
+def generate_crops(total_crops:int, crop_type:parameters.one_of('sealion_crops', 'region_crops')):
+    if crop_type == 'sealion_crops':
+        throw(NotImplemented('Cropping still has to be implemented.'))
+    crops_per_round = 100
+    rounds = round(total_crops / crops_per_round)
+    logger.info('Attempting to make '+str(total_crops)+' region crops in '+str(rounds)+' rounds...')
+    for i in range(rounds):
+        cropper = data.Cropper(crop_size = 224, total_crops = crops_per_round, pos_perc = 0.5, min_sealions_herd = 10)
+        cropper.find_crops()
+        cropper.save_crops()
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
@@ -90,7 +98,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     elif task == 'binary':
         tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
 
-    tl.build(network.lower(), input_shape = (300,300,3), summary = False)
+    tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.fine_tune_extended(
         epochs = 100,
         input_weights_name = NETWORKS[network.lower()][1],
@@ -102,6 +110,6 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
 
 if __name__ == '__main__':
     run(test_iterators,
-        #
+        generate_crops,
         train_top_network,
         fine_tune_network)
