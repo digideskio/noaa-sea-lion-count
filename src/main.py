@@ -24,21 +24,29 @@ def test_iterators():
         print('First in batch: {0}'.format(batch[0].shape))
         print('Batch size: {0}'.format(len(batch)))
 
-def generate_crops(total_crops:int, crop_type:parameters.one_of('sealion_crops', 'region_crops')):
-    #python3 main.py generate-crops 200000 region_crops
-    if crop_type == 'sealion_crops':
-        throw(NotImplemented('Cropping sea lions individually still has to be implemented.'))
+def generate_region_crops(total_crops:int):
+    #python3 main.py generate-region-crops 200000
     """
     Divide the cropping task in rounds to leverage the trade-off between efficiency and risk (the Cropper class
     first find all the crops and then writes them to disk) 
     """
+    import cropping
+
     crops_per_round = 1000
     rounds = round(total_crops / crops_per_round)
     logger.info('Attempting to make '+str(total_crops)+' region crops in '+str(rounds)+' rounds...')
     for i in range(rounds):
-        cropper = data.Cropper(crop_size = 224, total_crops = crops_per_round, pos_perc = 0.5, min_sealions_herd = 10)
+        cropper = cropping.RegionCropper(crop_size = 224, total_crops = crops_per_round, pos_perc = 0.5, min_sealions_herd = 10)
         cropper.find_crops()
         cropper.save_crops()
+
+def generate_individual_crops(num_negative_crops:int):
+    #python3 main.py generate-individual-crops 20000
+    """
+    Create positive and negative crops of sea lions from the original training data.
+    """
+    pass
+
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
@@ -114,11 +122,9 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
         n_layers = NETWORKS[network.lower()][0])
 
 
-
-
-
 if __name__ == '__main__':
     run(test_iterators,
-        generate_crops,
+        generate_region_crops,
+        generate_individual_crops,
         train_top_network,
         fine_tune_network)
