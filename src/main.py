@@ -24,9 +24,14 @@ def test_iterators():
     print('Batch size: {0}'.format(len(batch)))
 
 def generate_crops(total_crops:int, crop_type:parameters.one_of('sealion_crops', 'region_crops')):
+    #python3 main.py generate-crops 200000 region_crops
     if crop_type == 'sealion_crops':
-        throw(NotImplemented('Cropping still has to be implemented.'))
-    crops_per_round = 100
+        throw(NotImplemented('Cropping sea lions individually still has to be implemented.'))
+    """
+    Divide the cropping task in rounds to leverage the trade-off between efficiency and risk (the Cropper class
+    first find all the crops and then writes them to disk) 
+    """
+    crops_per_round = 1000
     rounds = round(total_crops / crops_per_round)
     logger.info('Attempting to make '+str(total_crops)+' region crops in '+str(rounds)+' rounds...')
     for i in range(rounds):
