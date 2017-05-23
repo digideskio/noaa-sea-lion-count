@@ -45,8 +45,8 @@ def generate_individual_crops(num_negative_crops:int):
     """
     Create positive and negative crops of sea lions from the original training data.
     """
-    pass
-
+    import cropping
+    cropping.generate_individual_crops(num_negative_crops)
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed

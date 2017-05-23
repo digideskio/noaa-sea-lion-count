@@ -2,6 +2,15 @@
 Module for data cropping functionality.
 """
 
+import os
+
+import scipy
+
+import settings
+import data
+
+logger = settings.logger.getChild('cropping')
+
 class RegionCropper:
     """
     Class for cropping images
@@ -17,8 +26,7 @@ class RegionCropper:
         self.min_sealions_herd = min_sealions_herd
         self.positive_crops = []
         self.negative_crops = []
-        print("Cropper intialisated with:\n\tcrop_size",self.crop_size,"\n\ttotal_crops",total_crops,"\n\tpos_perc",pos_perc)
-        return
+        logger.debug("Cropper intialisated with:\n\t crop_size: %s\n\ttotal_crops: %s\n\tpos_perc: %s" % (self.crop_size, total_crops, pos_perc))
         
     def crop_image(self, image, coordinates):    
         """
@@ -156,3 +164,66 @@ class RegionCropper:
         """
         filename = crop_meta[3]+'_id'+crop_meta[1]+'_'+str(crop_meta[2])+'clions_at_'+str(crop_meta[0][0])+'-'+str(crop_meta[0][1])+'_'+str(self.crop_size)+'px.jpg'
         scipy.misc.imsave(os.path.join(settings.CROPS_OUTPUT_DIR,filename), crop_image)
+        
+def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
+    """
+    Crop an image using the bounding box(es) to one or more cropped image(s).
+
+    :param img: The image to generate the crops for
+    :param bounding_boxes: A list of dictionaries of the form x, y, width, height, and optionally class.
+    :param out_size: The size of the output crops
+    :param zoom_factor: The factor with which to zoom in to the crop (relative to the fish size)
+                        == 1: no zoom
+                        >  1: zoom in
+                        <  1: zoom out
+    :return: A list of crops (and potentially a list of classes for each crop, if classes were given in the input)
+    """
+
+    crops = []
+
+    for bounding_box in bounding_boxes:
+        box_x_low, box_x_high, box_y_low, box_y_high = zoom_box(bounding_box, img.shape, zoom_factor)
+
+        # Crop
+        crop = img[box_y_low : box_y_high, box_x_low : box_x_high, :]
+
+        # Resize to output size
+        crop = scipy.misc.imresize(crop, size = out_size)
+
+        # Add to crops list
+        if "class" in bounding_box:
+            crops.append((crop, bounding_box["class"]))
+        else:
+            crops.append(crop)
+
+    return zip(*crops)
+
+def generate_individual_crops(num_negative_crops:int):
+    """
+    """
+    loader = data.Loader()
+    images = loader.load_original_images()
+    positive_output_dir = os.path.join(settings.CROPS_OUTPUT_DIR, "positive")
+    negative_output_dir = os.path.join(settings.CROPS_OUTPUT_DIR, "negative")
+
+    num_images = len(images)
+    num_neg_crops_per_image = int(num_negative_crops / num_images)
+    num_neg_crops_remainder = num_neg_crops_per_image % num_images
+
+    n = 0
+    for image in images:
+        n += 1
+
+        num_neg_crops_this_image = (num_neg_crops_per_image + 1) if n <= num_neg_crops_remainder else num_neg_crops_per_image
+            
+        img = image['x']()
+        m = image['m']
+
+        # bounding_boxes = []
+        # for coordinate in m['coordinates']:
+        #     bounding_boxes.append(...)
+        # positive_crops = crop(img, bounding_boxes, out_size = (..., ...), zoom_factor = 1)
+        #
+        # ... negative crops
+
+        pass
