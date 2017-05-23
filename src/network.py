@@ -46,7 +46,9 @@ class Learning:
         elif data_type == 'sea_lion_crops':
             throw(NotImplemented('Cropping still has to be implemented.'))
         elif data_type == 'region_crops':
-            throw(NotImplemented('Cropping still has to be implemented.'))
+            #throw(NotImplemented('Cropping still has to be implemented.'))
+            train_data = loader.load_crop_images(data_type = data_type)
+        
         
         if validate:
             train_val_split = loader.train_val_split(train_data)
@@ -54,12 +56,13 @@ class Learning:
             self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
         else:
             self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
-
+        
+        
     @abc.abstractmethod
     def build(self):
         throw(NotImplemented("Must be implemented by child class."))
 
-    def train(self, epochs, weights_name):
+    def train(self, epochs):
         """
         Train the (previously loaded/set) model. It is assumed that the `model` object
         has been already configured (such as which layers of it are frozen and which not)
@@ -76,7 +79,9 @@ class Learning:
             os.makedirs(settings.WEIGHTS_DIR)
 
         # Save the model with best validation accuracy during training
-        weights_name = weights_name + ".e{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
+        trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
+        weights_name = self.arch_name + "-lay"+str(trainable_layers)+"-ep{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
+        
         weights_path = os.path.join(settings.WEIGHTS_DIR, weights_name)
         checkpoint = keras.callbacks.ModelCheckpoint(
             weights_path,
@@ -96,7 +101,7 @@ class Learning:
             callbacks_list.append(tf_logs)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 949
+        unique_instances = 78000
         # Train
         self.model.fit_generator(
             generator = self.iterator,
@@ -104,7 +109,7 @@ class Learning:
             epochs = epochs,
             validation_data = self.val_iterator if self.validate else None,
             validation_steps = int(0.3*unique_instances/self.mini_batch_size) if self.validate else None,
-            workers = 2,
+            workers = 5,
             callbacks = callbacks_list)
 
 
@@ -120,14 +125,13 @@ class TransferLearning(Learning):
 
         self.base_model = None
         self.model = None
-        self.architecture = None
-        self.model_name = None
+        self.arch_name = None
         
     def print_layers_info(self):
-        '''
+        """
         Prints information about current frozen (non trainable) and unfrozen (trainable)
         layers
-        '''
+        """
         print(len(self.model.layers),'total layers (',len(self.base_model.layers),\
             'pretrained and',len(self.model.layers)-len(self.base_model.layers),'new stacked on top)')
         trainable = [layer.trainable for layer in self.model.layers]
@@ -173,23 +177,23 @@ class TransferLearning(Learning):
         # This is the model we will train:
         self.model = keras.models.Model(input=self.base_model.input, output=predictions)
 
-    def build(self, architecture, input_shape = None, summary = False):
+    def build(self, arch_name, input_shape = None, summary = False):
         """
         Build an extended model. A base model is first loaded disregarding its last layers and afterwards
         some new layers are stacked on top so the resulting model would be applicable to the
         fishering-monitoring problem
         
-        :param architecture: model name to load and use as base model (`"vgg16"`,`"vgg19"`,`"inception"`,`"xception"`,`"resnet"`).
+        :param arch_name: model name to load and use as base model (`"vgg16"`,`"vgg19"`,`"inception"`,`"xception"`,`"resnet"`).
         :param input_shape: optional shape tuple (see input_shape of argument of base network used in Keras).
         :param summary: whether to print the summary of the extended model
         """
 
         # Set the base model configuration and extended model name
-        self.architecture = architecture
-        self.base_model = PRETRAINED_MODELS[self.architecture](weights = 'imagenet', include_top = False, input_shape = input_shape)
+        self.arch_name = arch_name
+        self.base_model = PRETRAINED_MODELS[self.arch_name](weights = 'imagenet', include_top = False, input_shape = input_shape)
         
         # Extend the base model
-        print("Building network using %s as the pretrained architecture..." % (self.architecture))
+        print("Building network using %s as the pretrained architecture..." % (self.arch_name))
         self.extend()
         print("Done building the model.")
 
@@ -227,10 +231,10 @@ class TransferLearning(Learning):
             metrics_ = ['accuracy']
 
         self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0001, momentum=0.9), loss=loss, metrics = metrics_)
-        weights_name = self.model_name+'.finetuned'
+        #weights_name = self.model_name+'.finetuned'
         
         # Train
-        self.train(epochs, weights_name)
+        self.train(epochs)
         
     def train_top(self, epochs):
         """
@@ -257,10 +261,10 @@ class TransferLearning(Learning):
                 loss = loss,
                 metrics = metrics_)
                 
-        weights_name = self.model_name+'.toptrained'
+        #weights_name = self.model_name+'.toptrained'
         
         # Train
-        self.train(epochs, weights_name)
+        self.train(epochs)
 
 class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
     '''
