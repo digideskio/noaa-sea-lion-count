@@ -12,16 +12,17 @@ def test_iterators():
     logger.info('Starting...')
 
     loader = data.Loader()
-    train_data = loader.load_original_images()
+    train_data = loader.load_crop_images(data_type = 'region_crops')
     train_val_split = loader.train_val_split(train_data)
 
-    transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(settings.TRANSFORMATION_RESIZE_TO)))
-    iterator = data.DataIterator(train_val_split['train'], transform, batch_size = 8, shuffle = True, seed = 42)
-
-    batch = next(iterator)
-
-    print('First in batch: {0}'.format(batch[0].shape))
-    print('Batch size: {0}'.format(len(batch)))
+    #transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(settings.TRANSFORMATION_RESIZE_TO)))
+    transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer((224,224,3))))
+    iterator = data.DataIterator(train_val_split['train'], transform, batch_size = 16, shuffle = True, seed = 42)
+    
+    for i in range(10):
+        batch = next(iterator)
+        print('First in batch: {0}'.format(batch[0].shape))
+        print('Batch size: {0}'.format(len(batch)))
 
 def generate_crops(total_crops:int, crop_type:parameters.one_of('sealion_crops', 'region_crops')):
     #python3 main.py generate-crops 200000 region_crops
@@ -50,6 +51,7 @@ NETWORKS = {
 }
 
 def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+    #python main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
     
@@ -72,9 +74,10 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=256)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
+    tl.print_layers_info()
     tl.train_top(epochs = 100)
 
 def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
@@ -104,6 +107,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
         tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
+    tl.print_layers_info()
     tl.fine_tune_extended(
         epochs = 100,
         input_weights_name = NETWORKS[network.lower()][1],
