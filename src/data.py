@@ -31,7 +31,7 @@ class Loader:
         self.train_original_counts = self._load_train_original_counts()
         self.train_original_coordinates = self._load_train_original_coordinates()
         self.train_original_mismatched = self._load_train_original_mismatched()
-        self.herd_crops_coordinates = self._load_herd_crops_coordinates()
+        #self.herd_crops_coordinates = self._load_herd_crops_coordinates()
         
     def _load_train_original_counts(self):
         """
@@ -123,7 +123,40 @@ class Loader:
 
     def get_train_original_mismatched(self):
         return self.train_original_mismatched
-
+        
+    def load_crop_images(self, data_type):
+        assert data_type in ['sea_lion_crops', 'region_crops']
+        if data_type == 'region_crops':
+            crops_dir = settings.REGION_CROPS_DIR
+        else:
+            crops_dir = settings.SEA_LION_CROPS_DIR
+            
+        logger.debug('Loading train set '+data_type+' images')
+        images = []
+        # Get all train original images
+        filenames = sorted(glob.glob(os.path.join(crops_dir, "*.jpg")))
+        for filename in filenames:
+            name = utils.get_file_name_part(filename)
+            image_name = name.split('_')[1].split('d')[1]+'.jpg'
+            if name in self.train_original_mismatched:
+                # Skip images marked as mismatched
+                continue
+            assert name[:3] in ['pos','neg']
+            if name[:3] == 'pos':
+                y = 1
+            else:
+                y = 0
+            meta = {
+                'full_name': name,
+                'filename': image_name,
+                'coordinates': name.split('_')[4],
+                'counts':  int(name.split('_')[2].split('c')[0]),
+            }
+            images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
+                           'm': meta,
+                           'y': y})
+        #print(images)
+        return images
     def load_original_images(self, dataset = "train"):
         """
         Load the data
@@ -406,7 +439,7 @@ class DataIterator(Iterator):
 
                 batch_y[i] = d['y']
 
-        if batch_y:
+        if batch_y is not None:
             return batch_x, batch_y
         else:
             return batch_x
