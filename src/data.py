@@ -22,7 +22,7 @@ import utils
 import random
 from ast import literal_eval
 
-
+from keras.applications.imagenet_utils import preprocess_input
 logger = settings.logger.getChild('data')
 
 class Loader:
@@ -465,7 +465,7 @@ class DataIterator(Iterator):
                     batch_y = np.zeros(current_batch_size)
 
                 batch_y[i] = d['y']
-
+        batch_x = preprocess_input(batch_x)
         if batch_y is not None:
             return batch_x, batch_y
         else:
@@ -537,14 +537,14 @@ class AugmentationTransformer(Transformer):
 
         imagegen = ImageDataGenerator(
                 rescale = None,
-                rotation_range = settings.AUGMENTATION_ROTATION_RANGE,
-                shear_range = settings.AUGMENTATION_SHEAR_RANGE,
-                zoom_range = settings.AUGMENTATION_ZOOM_RANGE,
-                width_shift_range = settings.AUGMENTATION_WIDTH_SHIFT_RANGE,
-                height_shift_range = settings.AUGMENTATION_HEIGHT_SHIFT_RANGE,
+                #rotation_range = settings.AUGMENTATION_ROTATION_RANGE,
+                #shear_range = settings.AUGMENTATION_SHEAR_RANGE,
+                #zoom_range = settings.AUGMENTATION_ZOOM_RANGE,
+                #width_shift_range = settings.AUGMENTATION_WIDTH_SHIFT_RANGE,
+                #height_shift_range = settings.AUGMENTATION_HEIGHT_SHIFT_RANGE,
                 horizontal_flip = settings.AUGMENTATION_HORIZONTAL_FLIP,
-                vertical_flip = settings.AUGMENTATION_VERTICAL_FLIP,
-                channel_shift_range = settings.AUGMENTATION_CHANNEL_SHIFT_RANGE
+                vertical_flip = settings.AUGMENTATION_VERTICAL_FLIP
+                #channel_shift_range = settings.AUGMENTATION_CHANNEL_SHIFT_RANGE
                 )  
         
         self.augm = augmentor.Augmentor(imagegen) 
