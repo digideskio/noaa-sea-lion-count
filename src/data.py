@@ -8,6 +8,7 @@ import csv
 import glob
 import os
 import threading
+from ast import literal_eval
 
 import scipy
 import scipy.misc
@@ -16,13 +17,12 @@ import sklearn.model_selection
 import pandas as pd
 
 from keras import backend as K
+from keras.applications.imagenet_utils import preprocess_input
 
 import settings
 import utils
 import random
-from ast import literal_eval
 
-from keras.applications.imagenet_utils import preprocess_input
 logger = settings.logger.getChild('data')
 
 class Loader:
