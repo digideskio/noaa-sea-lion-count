@@ -52,8 +52,10 @@ class Loader:
         with open(settings.TRAIN_COUNTS_CSV, 'r') as file:
             d = {row['train_id']: utils.remove_key_from_dict(row, 'train_id') for row in csv.DictReader(file)}
         return d
+        
     def _load_herd_crops_coordinates(self):
         """
+        UNUSED: since now we are cropping herds offline
         Load the herd crops CSV file into a pandas DataFrame.
         column names: train_id,y_coord,x_coord,is_herd
         """
@@ -125,12 +127,16 @@ class Loader:
         return self.train_original_mismatched
         
     def load_crop_images(self, data_type):
+        """
+        Load precropped data
+        """
+        
         assert data_type in ['sea_lion_crops', 'region_crops']
         if data_type == 'region_crops':
             crops_dir = settings.REGION_CROPS_DIR
         else:
             crops_dir = settings.SEA_LION_CROPS_DIR
-            
+            assert False
         logger.debug('Loading train set '+data_type+' images')
         images = []
         # Get all train original images
@@ -155,8 +161,8 @@ class Loader:
             images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
                            'm': meta,
                            'y': y})
-        #print(images)
         return images
+        
     def load_original_images(self, dataset = "train"):
         """
         Load the data
@@ -225,7 +231,7 @@ class Loader:
         :param filename: The name of the file to load
         :return: The image as an ndarray
         """
-        logger.debug('Loading image from disk: %s' % filename)
+        #logger.debug('Loading image from disk: %s' % filename)
         return scipy.misc.imread(filename).astype("float32")
 
 class Cropper:
@@ -258,15 +264,19 @@ class Cropper:
         return image[y_coordinate : y_coordinate + self.crop_size, x_coordinate : x_coordinate + self.crop_size, :]
     
     def is_inside(self, xy_sealion, xy_crop):
-        #xy_sealion = (20,20)
-        #xy_crop = (10,10)
-
+        """
+        Returns true if the sea lion coordinate xy_sealion is inside the crop defined by
+        xy_crop and self.crop_size
+        """
         is_in_x_axis = xy_crop[0] < xy_sealion[0] < xy_crop[0] + self.crop_size
         is_in_y_axis = xy_crop[1] < xy_sealion[1] < xy_crop[1] + self.crop_size
 
         return is_in_x_axis and is_in_y_axis
     
     def random_crop(self, train_id):
+        """
+        Randomly select and returns a crop point on image train_id
+        """
         size = literal_eval(self.loader.train_original_counts[train_id]['size'])
         x_coordinate = random.randint(0,size[1] - self.crop_size)
         y_coordinate = random.randint(0,size[0] - self.crop_size)
@@ -287,6 +297,10 @@ class Cropper:
         return self.enough_positives() and self.enough_negatives()
     
     def count_sealions_in_crop(self, xy_crop, train_id, skip_pups):
+        """
+        Counts how many sea lions are inside the crop. Pups can be skipped
+        since the look like rocks and usually are not alone
+        """
         count = 0
         if train_id not in self.loader.train_original_coordinates.keys():
             return count
@@ -299,6 +313,9 @@ class Cropper:
         return count
 
     def find_crops(self):
+        """
+        Find negative and positive crops in the whole train set
+        """
         train_ids = list(self.loader.train_original_counts.keys())
 
         self.trials = 0
@@ -323,6 +340,9 @@ class Cropper:
         print("Finished after ",self.trials,"trials")
         
     def show_some_crops(self,n = 10):
+        """
+        Visualize some of the positive and negative crops that the class is taking
+        """
         for i in range(n):
             pc = self.positive_crops[i]
             img = self.loader.load(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, pc[1]+'.jpg'))
@@ -339,6 +359,9 @@ class Cropper:
             plt.show()
             
     def save_crops(self):
+        """
+        Save crops to disk
+        """
         # Create weight output dir if it does not exist
         if not os.path.exists(settings.CROPS_OUTPUT_DIR):
             os.makedirs(settings.CROPS_OUTPUT_DIR)       
@@ -359,6 +382,10 @@ class Cropper:
         print(count,"crops were saved in",settings.CROPS_OUTPUT_DIR)
             
     def save_crop(self, crop_image, crop_meta):
+        """
+        Save one crop to disk, the filename has some metadata information
+        and looks like this 'pos_id402_14clions_at_1018-1378_224px.jpg'
+        """
         filename = crop_meta[3]+'_id'+crop_meta[1]+'_'+str(crop_meta[2])+'clions_at_'+str(crop_meta[0][0])+'-'+str(crop_meta[0][1])+'_'+str(self.crop_size)+'px.jpg'
         scipy.misc.imsave(os.path.join(settings.CROPS_OUTPUT_DIR,filename), crop_image)
 
