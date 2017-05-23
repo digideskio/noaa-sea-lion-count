@@ -17,6 +17,7 @@ OUTPUT_DIR = os.path.join(ROOT_DIR, "output")
 TRAIN_DIR = os.path.join(DATA_DIR, "train")
 TEST_DIR = os.path.join(DATA_DIR, "test_st1")
 
+
 TRAIN_ORIGINAL_IMAGES_DIR     = os.path.join(TRAIN_DIR, "original")
 TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
@@ -27,6 +28,7 @@ SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
 TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv")
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
 TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainImages.txt")
+
 
 TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
 
@@ -39,6 +41,7 @@ IMAGENET_CLSLOC_PATH = os.path.join(IMAGENET_DIR, "meta_clsloc.mat")
 
 WEIGHTS_DIR = os.path.join(OUTPUT_DIR, "weights", strftime("%Y%m%dT%H%M%S"))
 CROPS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "crops", strftime("%Y%m%dT%H%M%S"))
+
 TENSORBOARD_LOGS_DIR = os.path.join(DATA_DIR, 'tb_logs')
 SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 
@@ -46,13 +49,14 @@ SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 TRANSFORMATION_RESIZE_TO = (2000,2000,3)
 AUGMENTATION_ROTATION_RANGE = 0,
 AUGMENTATION_SHEAR_RANGE = None,#0.1
-AUGMENTATION_ZOOM_RANGE = 0.,#[0.65,1.0]
-AUGMENTATION_WIDTH_SHIFT_RANGE = 0.,#0.1
-AUGMENTATION_HEIGHT_SHIFT_RANGE = 0.,#0.1
+AUGMENTATION_ZOOM_RANGE = 0,#[0.65,1.0]
+AUGMENTATION_WIDTH_SHIFT_RANGE = 0,#0.1
+AUGMENTATION_HEIGHT_SHIFT_RANGE = 0,#0.1
 AUGMENTATION_HORIZONTAL_FLIP = True,
 AUGMENTATION_VERTICAL_FLIP = True,
-AUGMENTATION_CHANNEL_SHIFT_RANGE = 0.,#5.0
+AUGMENTATION_CHANNEL_SHIFT_RANGE = 0,#5.0
 AUGMENTATION_BLUR_RANGE = [0., 1]
+
 
 # Problem-specific settings
 
