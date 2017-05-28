@@ -3,11 +3,12 @@ Module for data cropping functionality.
 """
 
 import os
-
+import random
 import scipy
 
-import settings
 import data
+import settings
+import utils
 
 logger = settings.logger.getChild('cropping')
 
@@ -198,32 +199,75 @@ def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
 
     return zip(*crops)
 
-def generate_individual_crops(num_negative_crops:int):
+def coords_overlap(coord1, coord2, bbox_size):
+    xmin1, ymin1 = coord1
+    xmin2, ymin2 = coord2
+    
+    xmax1, ymax1 = xmin1+bbox_size, ymin1+bbox_size
+    xmax2, ymax2 = xmin2+bbox_size, ymin2+bbox_size
+    
+    intersection = max(0, min(xmax1, xmax2) - max(xmin1, xmin2)) * max(0, min(ymax1, ymax2) - max(ymin1, ymin2))
+    return intersection / float(bbox_size*bbox_size)
+    
+
+def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=False):
     """
+    :param sea_lion_size: The width/height (in the actual image) of a sea lion crop (default 100 by 100)
+    :param num_negative_crops: The total number of negative crops generated, over all images
+    :param ignore_pups: If true, pups will not result in positive crops
     """
     loader = data.Loader()
     images = loader.load_original_images()
-    positive_output_dir = os.path.join(settings.CROPS_OUTPUT_DIR, "positive")
-    negative_output_dir = os.path.join(settings.CROPS_OUTPUT_DIR, "negative")
+    coordsdict = loader.get_train_original_coordinates()
+    
+    dir = settings.CROPS_OUTPUT_DIR
+    os.makedirs(dir)
 
     num_images = len(images)
     num_neg_crops_per_image = int(num_negative_crops / num_images)
     num_neg_crops_remainder = num_neg_crops_per_image % num_images
-
+    
     n = 0
     for image in images:
         n += 1
+        logger.info('Cropping image ' + str(n) + '...')
 
         num_neg_crops_this_image = (num_neg_crops_per_image + 1) if n <= num_neg_crops_remainder else num_neg_crops_per_image
             
         img = image['x']()
-        m = image['m']
+        filename = image['m']['filename']
+        img_height, img_width, _ = img.shape
+        coords = [(max(0, min(img_width-sea_lion_size, int(float(coord['x_coord']) - sea_lion_size/2))),
+                   max(0, min(img_height - sea_lion_size, int(float(coord['y_coord']) - sea_lion_size/2))),
+                   coord['category']) for coord in coordsdict[filename]]
+        
+        num_neg = 0
+        negcoords = []
+        while num_neg < num_neg_crops_this_image:
+            x_coord = random.randint(0, img_width  - sea_lion_size)
+            y_coord = random.randint(0, img_height - sea_lion_size)
+            
+            # Check for overlap with any sea lions (also slightly outside of the bounding box, to avoid matching bigger sea lions' parts)
+            if any(coords_overlap((sea_lion[0], sea_lion[1]), (x_coord, y_coord), 1.25*sea_lion_size) > 0 for sea_lion in coords):
+                continue
+            
+            negcoords.append((x_coord, y_coord, 'negative'))
+            num_neg += 1
 
-        # bounding_boxes = []
-        # for coordinate in m['coordinates']:
-        #     bounding_boxes.append(...)
-        # positive_crops = crop(img, bounding_boxes, out_size = (..., ...), zoom_factor = 1)
-        #
-        # ... negative crops
+        for x_coord, y_coord, category in negcoords + coords:
+            if ignore_pups and coord['category'] == 'pups':
+                continue
+            
+            # Crop
+            crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
+            #print((x_coord, y_coord, img.shape, crop_img.shape))
 
-        pass
+            # Resize to output size - not needed for networks if it's uniform
+            #crop = scipy.misc.imresize(crop, size = out_size)
+
+            cropname = category + '_id' + filename[:-4] + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
+            num_neg -= 1
+            
+            scipy.misc.imsave(os.path.join(dir, cropname), crop_img)
+            
+    

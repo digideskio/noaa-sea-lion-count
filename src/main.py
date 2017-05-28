@@ -40,13 +40,19 @@ def generate_region_crops(total_crops:int):
         cropper.find_crops()
         cropper.save_crops()
 
-def generate_individual_crops(num_negative_crops:int):
+def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False):
     #python3 main.py generate-individual-crops 20000
     """
     Create positive and negative crops of sea lions from the original training data.
+    
+    num_negative_crops: the total number of negative crops generated over the whole data set
+    
+    sea_lion_size: the width and height of a sea lion crop in the image (always square)
+    
+    ignore_pups: if true, no pups are included in the data set (neither in positive nor negative samples)
     """
     import cropping
-    cropping.generate_individual_crops(num_negative_crops)
+    cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups)
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
