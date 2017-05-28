@@ -2,6 +2,7 @@
 Module for data cropping functionality.
 """
 
+import numpy
 import os
 import random
 import scipy
@@ -260,7 +261,9 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
             
             # Crop
             crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
-            #print((x_coord, y_coord, img.shape, crop_img.shape))
+            
+            if numpy.sum(numpy.sum(crop_img, 2) == 0) / (sea_lion_size*sea_lion_size) > 0.75:
+                continue
 
             # Resize to output size - not needed for networks if it's uniform
             #crop = scipy.misc.imresize(crop, size = out_size)
