@@ -200,6 +200,10 @@ def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
 
     return zip(*crops)
 
+def is_blacked_out(crop):
+    dim1, dim2, _ = crop.shape
+    return numpy.sum(numpy.sum(crop, 2) == 0) / (dim1*dim2) > 0.75
+
 def coords_overlap(coord1, coord2, bbox_size):
     xmin1, ymin1 = coord1
     xmin2, ymin2 = coord2
@@ -262,7 +266,7 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
             # Crop
             crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
             
-            if numpy.sum(numpy.sum(crop_img, 2) == 0) / (sea_lion_size*sea_lion_size) > 0.75:
+            if is_blacked_out(crop_img):
                 continue
 
             # Resize to output size - not needed for networks if it's uniform
