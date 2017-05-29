@@ -88,7 +88,7 @@ NETWORKS = {
     'resnet':    (75,  'insert-resnet-network-weights-file-here.hdf5')
 }
 
-def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
     #python3 main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
