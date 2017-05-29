@@ -13,19 +13,32 @@ def test_iterators():
 
     loader = data.Loader()
     train_data = loader.load_crop_images(data_type = 'region_crops')
+    #train_data = loader.load_original_images()
     train_val_split = loader.train_val_split(train_data)
 
     #transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(settings.TRANSFORMATION_RESIZE_TO)))
     transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer((224,224,3))))
+    #transform = data.AugmentationTransformer(next = data.ResizeTransformer((224,224,3)))
     iterator = data.DataIterator(train_val_split['train'], transform, batch_size = 16, shuffle = True, seed = 42)
     
     for i in range(10):
         batch = next(iterator)
         print('First in batch: {0}'.format(batch[0].shape))
         print('Batch size: {0}'.format(len(batch)))
+        
+def generate_positive_region_crops(crop_size:int, min_sealions_pos:int, max_overlap_perc:float, plot:bool, sliding_perc:float):
+    #nice -19 python main.py generate-positive-region-crops 500 15 0.5 False 0.1
+    import cropping
+    cropper = cropping.RegionCropper(crop_size)
+    cropper.find_pos_crops_dataset(min_sealions_pos, max_overlap_perc, plot, sliding_perc)     
+def generate_negative_region_crops(crop_size:int, wanted_crops:int, max_sealions_neg:int):
+    #nice -19 python main.py generate-negative-region-crops 500 1000 2
+    import cropping
+    cropper = cropping.RegionCropper(crop_size)
+    cropper.find_neg_crops_dataset(wanted_crops, max_sealions_neg)
 
-def generate_region_crops(total_crops:int):
-    #python3 main.py generate-region-crops 200000
+def generate_naive_region_crops(total_crops:int):
+    #python main.py generate-naive-region-crops 200000
     """
     Divide the cropping task in rounds to leverage the trade-off between efficiency and risk (the Cropper class
     first find all the crops and then writes them to disk) 
@@ -141,7 +154,8 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
 
 if __name__ == '__main__':
     run(test_iterators,
-        generate_region_crops,
+        generate_positive_region_crops,
+        generate_negative_region_crops,
         generate_individual_crops,
         generate_overlap_masks,
         train_top_network,

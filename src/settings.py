@@ -41,7 +41,7 @@ IMAGENET_CLSLOC_PATH = os.path.join(IMAGENET_DIR, "meta_clsloc.mat")
 ## Output directories 
 
 WEIGHTS_DIR = os.path.join(OUTPUT_DIR, "weights", strftime("%Y%m%dT%H%M%S"))
-CROPS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "crops", strftime("%Y%m%dT%H%M%S"))
+CROPS_OUTPUT_DIR = os.path.join(OUTPUT_DIR,"crops", strftime("%Y%m%dT%H%M%S"))
 
 TENSORBOARD_LOGS_DIR = os.path.join(DATA_DIR, 'tb_logs')
 SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
