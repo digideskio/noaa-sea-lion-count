@@ -136,8 +136,8 @@ class Loader:
             crops_dir = settings.REGION_CROPS_DIR
         else:
             crops_dir = settings.SEA_LION_CROPS_DIR
-            assert False
-        logger.debug('Loading train set '+data_type+' images')
+
+        logger.debug('Loading train set %s images' % data_type)
         images = []
         # Get all train original images
         filenames = sorted(glob.glob(os.path.join(crops_dir, "*.jpg")))
