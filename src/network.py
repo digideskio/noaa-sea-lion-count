@@ -44,9 +44,8 @@ class Learning:
         if data_type == 'original':
             train_data = loader.load_original_images()
         elif data_type == 'sea_lion_crops':
-            throw(NotImplemented('Cropping still has to be implemented.'))
+            train_data = loader.load_crop_images(data_type = data_type)
         elif data_type == 'region_crops':
-            #throw(NotImplemented('Cropping still has to be implemented.'))
             train_data = loader.load_crop_images(data_type = data_type)
         
         
