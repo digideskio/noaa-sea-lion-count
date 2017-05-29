@@ -209,7 +209,6 @@ class Loader:
 
                 images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
                                'm': meta})
-
         return images
 
     def train_val_split(self, data, split_ratio = 0.7):
@@ -295,7 +294,7 @@ class DataIterator(Iterator):
         for i, j in enumerate(index_array):
             # i is the batch index (0 to batch_size)
             # j is the index of the data to put at this batch index
-            d = self.data[j]
+            d = dict(self.data[j]) # Get the dictionary of this individual sample from the batch (and make a shallow copy of it)
             if self.data_transformation is not None:
                 d = self.data_transformation.apply(d)
             if batch_x is None:
