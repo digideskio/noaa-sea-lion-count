@@ -470,7 +470,6 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
     """
     loader = data.Loader()
     images = loader.load_original_images()
-    coordsdict = loader.get_train_original_coordinates()
     
     dir = settings.CROPS_OUTPUT_DIR # with timestamp, so makedirs is needed every time
     os.makedirs(dir)
@@ -491,7 +490,7 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
         img_height, img_width, _ = img.shape
         coords = [(max(0, min(img_width-sea_lion_size, int(float(coord['x_coord']) - sea_lion_size/2))),
                    max(0, min(img_height - sea_lion_size, int(float(coord['y_coord']) - sea_lion_size/2))),
-                   coord['category']) for coord in coordsdict[filename]]
+                   coord['category']) for coord in image['m']['coordinates']]
         
         maskname = os.path.join(settings.OVERLAP_MASKS_DIR, filename + '.mask')
         if not os.path.exists(maskname):
