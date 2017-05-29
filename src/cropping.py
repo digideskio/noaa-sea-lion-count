@@ -433,7 +433,7 @@ def generate_overlap_masks():
     n = 0
     filenames = sorted(glob.glob(os.path.join(settings.TRAIN_DOTTED_IMAGES_DIR, "*.jpg")))
     for filename in filenames:
-        print('Generating overlap mask for image ' + n + '...')
+        logger.debug('Generating overlap mask for image %s ...' % n)
         n += 1
         
         name = utils.get_file_name_part(filename)
