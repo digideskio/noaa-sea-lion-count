@@ -40,4 +40,7 @@ def crop_image(image, coordinates, crop_size):
     :param crop_size: The size of the desired crop
     """
     x_coordinate, y_coordinate = coordinates[0], coordinates[1]
-    return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size, :]
+    if len(image.shape) == 3: # RGB image
+        return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size, :]
+    else: # regular 2D matrix
+        return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size]

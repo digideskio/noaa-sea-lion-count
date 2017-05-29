@@ -54,6 +54,17 @@ def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, igno
     import cropping
     cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups)
 
+def generate_overlap_masks():
+    #python3 main.py generate-overlap-masks
+    """
+    Generate boolean masks for the training set's black regions,
+    in which False indicates that a pixel is black (overlaps with another image).
+    Do this before generating crops.
+    """
+    
+    import cropping
+    cropping.generate_overlap_masks()
+
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
 NETWORKS = {
@@ -65,7 +76,7 @@ NETWORKS = {
 }
 
 def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
-    #python main.py train-top-network binary vgg16 region_crops
+    #python3 main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
     
@@ -132,5 +143,6 @@ if __name__ == '__main__':
     run(test_iterators,
         generate_region_crops,
         generate_individual_crops,
+        generate_overlap_masks,
         train_top_network,
         fine_tune_network)

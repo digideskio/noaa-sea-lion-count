@@ -2,8 +2,12 @@
 Module for data cropping functionality.
 """
 
+import csv
+import glob
+import gzip
 import numpy
 import os
+import pickle
 import random
 import scipy
 
@@ -200,9 +204,33 @@ def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
 
     return zip(*crops)
 
+def generate_overlap_masks():
+    if not os.path.exists(settings.OVERLAP_MASKS_DIR):
+        os.makedirs(settings.OVERLAP_MASKS_DIR)
+    
+    with open(settings.TRAIN_MISMATCHED_CSV, 'r') as file:
+        mismatched = {row['train_id']: True for row in csv.DictReader(file)}
+    
+    n = 0
+    filenames = sorted(glob.glob(os.path.join(settings.TRAIN_DOTTED_IMAGES_DIR, "*.jpg")))
+    for filename in filenames:
+        print('Generating overlap mask for image ' + n + '...')
+        n += 1
+        
+        name = utils.get_file_name_part(filename)
+        if name in mismatched:
+            continue
+        
+        img = scipy.misc.imread(filename).astype("float32")
+        mask = numpy.sum(img, 2) > 0
+        
+        maskname = os.path.join(settings.OVERLAP_MASKS_DIR, name + '.mask')
+        with gzip.open(maskname, 'wb') as outfile:
+            pickle.dump(mask, outfile)
+
+
 def is_blacked_out(crop):
-    dim1, dim2, _ = crop.shape
-    return numpy.sum(numpy.sum(crop, 2) == 0) / (dim1*dim2) > 0.75
+    return numpy.sum(crop == 0) / (crop.shape[0] * crop.shape[1]) > 0.75
 
 def coords_overlap(coord1, coord2, bbox_size):
     xmin1, ymin1 = coord1
@@ -225,7 +253,7 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
     images = loader.load_original_images()
     coordsdict = loader.get_train_original_coordinates()
     
-    dir = settings.CROPS_OUTPUT_DIR
+    dir = settings.CROPS_OUTPUT_DIR # with timestamp, so makedirs is needed every time
     os.makedirs(dir)
 
     num_images = len(images)
@@ -246,6 +274,13 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
                    max(0, min(img_height - sea_lion_size, int(float(coord['y_coord']) - sea_lion_size/2))),
                    coord['category']) for coord in coordsdict[filename]]
         
+        maskname = os.path.join(settings.OVERLAP_MASKS_DIR, filename + '.mask')
+        if not os.path.exists(maskname):
+            raise AssertionError('Overlap mask not found! Generate overlap masks before crops: ' + maskname)
+            
+        with gzip.open(maskname, 'rb') as maskfile:
+            mask = pickle.load(maskfile)
+        
         num_neg = 0
         negcoords = []
         while num_neg < num_neg_crops_this_image:
@@ -258,21 +293,23 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
             
             negcoords.append((x_coord, y_coord, 'negative'))
             num_neg += 1
-
+        
         for x_coord, y_coord, category in negcoords + coords:
             if ignore_pups and coord['category'] == 'pups':
+                continue
+            
+            # Check for black markings
+            mask_crop = utils.crop_image(mask, (x_coord, y_coord), sea_lion_size)
+            if is_blacked_out(mask_crop):
                 continue
             
             # Crop
             crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
             
-            if is_blacked_out(crop_img):
-                continue
-
             # Resize to output size - not needed for networks if it's uniform
             #crop = scipy.misc.imresize(crop, size = out_size)
 
-            cropname = category + '_id' + filename[:-4] + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
+            cropname = category + '_id' + filename + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
             num_neg -= 1
             
             scipy.misc.imsave(os.path.join(dir, cropname), crop_img)

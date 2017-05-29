@@ -22,6 +22,7 @@ TRAIN_ORIGINAL_IMAGES_DIR     = os.path.join(TRAIN_DIR, "original")
 TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 CROPS_INPUT_DIR               = os.path.join(TRAIN_DIR, "crops")
+OVERLAP_MASKS_DIR             = os.path.join(TRAIN_DIR, "overlap_masks")
 REGION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "region_crops")
 SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
 
