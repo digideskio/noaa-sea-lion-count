@@ -13,6 +13,7 @@ from keras.applications import VGG16
 from keras.applications import VGG19
 import metrics
 import numpy as np
+import math
 import scipy.misc
 import settings
 import skimage.transform
@@ -100,14 +101,17 @@ class Learning:
             callbacks_list.append(tf_logs)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 500
+        unique_instances = 15000
         # Train
+        steps_per_epoch = 3#math.ceil(0.7*unique_instances/self.mini_batch_size)
+        validation_steps = 2#math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        self.print_layers_info()
         self.model.fit_generator(
             generator = self.iterator,
-            steps_per_epoch = int(0.7*unique_instances/self.mini_batch_size), 
+            steps_per_epoch = steps_per_epoch, 
             epochs = epochs,
             validation_data = self.val_iterator if self.validate else None,
-            validation_steps = int(0.3*unique_instances/self.mini_batch_size) if self.validate else None,
+            validation_steps = validation_steps,
             workers = 5,
             callbacks = callbacks_list)
 

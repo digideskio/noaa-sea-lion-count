@@ -89,7 +89,7 @@ NETWORKS = {
 }
 
 def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
-    #python3 main.py train-top-network binary vgg16 region_crops
+    #nice -19 python3 main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
     
@@ -112,10 +112,9 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=256)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
-    tl.print_layers_info()
     tl.train_top(epochs = 100)
 
 def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
@@ -147,7 +146,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.print_layers_info()
     tl.fine_tune_extended(
-        epochs = 100,
+        epochs = 200,
         input_weights_name = NETWORKS[network.lower()][1],
         n_layers = NETWORKS[network.lower()][0])
 

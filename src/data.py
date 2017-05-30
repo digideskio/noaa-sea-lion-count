@@ -140,24 +140,32 @@ class Loader:
         logger.debug('Loading train set %s images' % data_type)
         images = []
         # Get all train original images
-        filenames = sorted(glob.glob(os.path.join(crops_dir, "*.jpg")))
+        filenames_pos = sorted(glob.glob(os.path.join(crops_dir,'pos',"*.jpg")))
+        filenames_neg = sorted(glob.glob(os.path.join(crops_dir,'neg',"*.jpg")))
+        filenames = filenames_pos + filenames_neg
         for filename in filenames:
+            #10clions_at40-1680_in66_400px
+            #0clions_at0-2471_in579_400px
             name = utils.get_file_name_part(filename)
-            image_name = name.split('_')[1].split('d')[1]+'.jpg'
-            if name in self.train_original_mismatched:
+            #image_name = name.split('_')[1].split('d')[1]+'.jpg'
+            image_name = name.split('in')[1].split('_')[0]+'.jpg'
+            if image_name in self.train_original_mismatched:
                 # Skip images marked as mismatched
                 continue
-            assert name[:3] in ['pos','neg']
-            if name[:3] == 'pos':
+            
+            y = filename.split(os.path.sep)[-2]
+            assert y in ['pos','neg']
+            if y == 'pos':
                 y = 1
             else:
                 y = 0
             meta = {
                 'full_name': name,
                 'filename': image_name,
-                'coordinates': name.split('_')[4],
-                'counts':  int(name.split('_')[2].split('c')[0]),
+                'coordinates': name.split('_')[1][2:],
+                'counts':  int(name.split('clions')[0]),
             }
+            
             images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
                            'm': meta,
                            'y': y})
