@@ -35,7 +35,17 @@ Once our `batch_job` file is ready we have to execute it like this:
 This will start the whole process (and start consuming your credits).
 
 #Managing batch jobs
-With `sbatch batch_job` we have submitted a job. We can submit more than one if we want. If we type now `squeue -u $(whoami)` we will see all our submitted batches. In the last column we can see the name of the node wherein each batch job is running (`gcnXX`, where `XX` are numbers). Is it possible that although we have submitted our batch job, it hasn't been assigned any node yet (instead of `gcnXX` it says `(Priority)` or something like that). This will happen if we want to allocate a lot of hours for example. Sooner or later our batch job will be given a node, so it is recommended to run `watch -n1 squeue -u $(whoami)` so it refreshes automatically and we will know when our job is given a node. For this matter, as we can see in the [documentation](https://userinfo.surfsara.nl/systems/cartesius/usage/batch-usage), if we set `gpu_short` in the `--partition` (as we have done in the `batch_job` example file) we can only "book" one hour. This is because that mode is meant for test runs; if we want more we will have to set it to `gpu` instead.
+With `sbatch batch_job` we have submitted a job. We can submit more than one if we want. If we type now `squeue -u $(whoami)` we will see all our submitted batches. In the last column we can see the name of the node wherein each batch job is running (`gcnXX`, where `XX` are numbers). Is it possible that although we have submitted our batch job, it hasn't been assigned any node yet (instead of `gcnXX` it says `(None)`). 
+```
+[gdemo013@int2 src]$ squeue -u gdemo013
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+           3176889       gpu   resnet gdemo013 PD       0:00      1 (None)
+           3176890       gpu xception gdemo013 PD       0:00      1 (None)
+           3176888       gpu    vgg16 gdemo013  R       0:36      1 gcn18
+
+```
+
+This will happen if we want to allocate a lot of hours for example. Sooner or later our batch job will be given a node, so it is recommended to run `watch -n1 squeue -u $(whoami)` so it refreshes automatically and we will know when our job is given a node. For this matter, as we can see in the [documentation](https://userinfo.surfsara.nl/systems/cartesius/usage/batch-usage), if we set `gpu_short` in the `--partition` (as we have done in the `batch_job` example file) we can only "book" one hour. This is because that mode is meant for test runs; if we want more we will have to set it to `gpu` instead.
 
 ## Monitoring the experiment
 So now we are still in the login node but the experiment is running in a different one. We may want to access that node in order to check how things are going, like monitoring GPU usage via the `watch -n1 nvidia-smi` command. In order to do so we have to run `squeue -u $(whoami)`. I four job has been assigned the node `gcn34` for example,we will have to type `ssh gcn34`, input our password and we will be in the allocated node.
