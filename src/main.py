@@ -81,15 +81,15 @@ def generate_overlap_masks():
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
 NETWORKS = {
-    'vgg16':     (0,   'insert-vgg16-network-weights-file-here.hdf5'),
+    'vgg16':     (0,   'vgg16-lay2-ep018-tloss0.5491-vloss0.5485.hdf5'),
     'vgg19':     (17,  'insert-vgg19-network-weights-file-here.hdf5'),
     'inception': (125, 'insert-inception-network-weights-file-here.hdf5'), # no numbers for this one
-    'xception':  (125, 'insert-xception-network-weights-file-here.hdf5'),
-    'resnet':    (75,  'insert-resnet-network-weights-file-here.hdf5')
+    'xception':  (125, 'xception-lay2-ep001-tloss0.9953-vloss0.8017.hdf5'),
+    'resnet':    (75,  'resnet-lay2-ep016-tloss0.0832-vloss0.0521.hdf5')
 }
 
 def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
-    #python3 main.py train-top-network binary vgg16 region_crops
+    #nice -19 python3 main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
     
@@ -112,11 +112,10 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=256)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
-    tl.print_layers_info()
-    tl.train_top(epochs = 100)
+    tl.train_top(epochs = 200)
 
 def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
     """
@@ -142,21 +141,54 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=16)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
-    tl.print_layers_info()
+
     tl.fine_tune_extended(
-        epochs = 100,
+        epochs = 200,
         input_weights_name = NETWORKS[network.lower()][1],
         n_layers = NETWORKS[network.lower()][0])
 
+def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), perc:float, data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+    """
+    Fine-tune a trained extended network. To do this, first the top
+    of the extended network must have been trained.
+    
+    task: the task to train for ("binary" for sea lion or not, "type" for sea lion type)
+    
+    network: the network architecture to train (VGG16, VGG19, Inception, XCeption, ResNet)
+    
+    data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
+    """
+
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
+
+    if data_type == 'original':
+        input_shape = settings.TRANSFORMATION_RESIZE_TO
+    elif data_type == 'sea_lion_crops':
+        input_shape = (100,100,3)
+    elif data_type == 'region_crops':
+        input_shape = (224,224,3)
+    
+    if task == 'type':
+        tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
+    elif task == 'binary':
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
+
+    tl.build(network.lower(), input_shape = input_shape, summary = False)
+
+    tl.fine_tune_extended(
+        epochs = 200,
+        input_weights_name = NETWORKS[network.lower()][1],
+        perc = perc)
 
 if __name__ == '__main__':
     run(test_iterators,
         generate_positive_region_crops,
         generate_negative_region_crops,
         generate_individual_crops,
+        fine_tune_network_perc,
         generate_overlap_masks,
         train_top_network,
         fine_tune_network)
