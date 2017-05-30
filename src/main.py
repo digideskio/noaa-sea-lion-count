@@ -53,7 +53,7 @@ def generate_naive_region_crops(total_crops:int):
         cropper.find_crops()
         cropper.save_crops()
 
-def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False, blacken=False:
+def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False, blacken=False):
     #python3 main.py generate-individual-crops 20000
     """
     Create positive and negative crops of sea lions from the original training data.
