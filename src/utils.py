@@ -44,3 +44,25 @@ def crop_image(image, coordinates, crop_size):
         return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size, :]
     else: # regular 2D matrix
         return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size]
+
+def blacken_crop(crop, rad):
+    """
+    Return a crop with only the sealion visible and the corners turned black.
+
+    :params crop: The image returned by crop_image
+    :params rad: The radius of the output circle.
+    """
+    from PIL import Image
+    from PIL import ImageDraw
+    crop = Image.fromarray(crop.astype('uint8'))
+    circle = Image.new('L', (rad * 2, rad * 2), 0)
+    draw = ImageDraw.Draw(circle)
+    draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
+    alpha = Image.new('L', crop.size, 255)
+    w, h = crop.size
+    alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
+    alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
+    alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
+    alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
+    crop.putalpha(alpha)
+    return crop
