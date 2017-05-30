@@ -17,6 +17,7 @@ import math
 import scipy.misc
 import settings
 import skimage.transform
+from time import strftime
 
 PRETRAINED_MODELS = {
     "vgg16":     VGG16,
@@ -73,14 +74,16 @@ class Learning:
         """
         
         callbacks_list = []
-
+        trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
         # Create weight output dir if it does not exist
-        if not os.path.exists(settings.WEIGHTS_DIR):
-            os.makedirs(settings.WEIGHTS_DIR)
+        base_dir = strftime("%Y%m%dT%H%M%S")+'_'+self.arch_name + "-lay"+str(trainable_layers)
+        weights_dir = os.path.join(settings.WEIGHTS_DIR, base_dir)
+        if not os.path.exists(weights_dir):
+            os.makedirs(weights_dir)
 
         # Save the model with best validation accuracy during training
-        trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
-        weights_name = self.arch_name + "-lay"+str(trainable_layers)+"-ep{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
+        
+        weights_name = base_dir+"-ep{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
         
         weights_path = os.path.join(settings.WEIGHTS_DIR, weights_name)
         checkpoint = keras.callbacks.ModelCheckpoint(
@@ -94,14 +97,14 @@ class Learning:
         if self.tensor_board:
             # Output tensor board logs
             tf_logs = keras.callbacks.TensorBoard(
-                log_dir = settings.TENSORBOARD_LOGS_DIR,
+                log_dir = os.path.join(settings.TENSORBOARD_LOGS_DIR,base_dir),
                 histogram_freq = 1,
                 write_graph = True,
                 write_images = True)
             callbacks_list.append(tf_logs)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 60000
+        unique_instances = 50000
         # Train
         steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
         validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
@@ -112,7 +115,7 @@ class Learning:
             epochs = epochs,
             validation_data = self.val_iterator if self.validate else None,
             validation_steps = validation_steps,
-            workers = 5,
+            workers = 8,
             callbacks = callbacks_list)
 
 
@@ -154,7 +157,7 @@ class TransferLearning(Learning):
         if percentage:
             assert percentage < 1
             n_layers = int(float(len(self.base_model.layers))*percentage)
-        print('Freezing last',n_layers,'of the pretrained model',self.arch,'...')
+        #print('Freezing last',n_layers,'of the pretrained model',self.arch,'...')
         for layer in self.base_model.layers[-n_layers:]:
             layer.trainable = True
             
@@ -203,7 +206,7 @@ class TransferLearning(Learning):
         if summary:
             print(self.model.summary())
     
-    def fine_tune_extended(self, epochs, input_weights_name, n_layers = 126):
+    def fine_tune_extended(self, epochs, input_weights_name, n_layers = 126, perc = None):
         """
         Fine-tunes the extended model. It is assumed that the top part of the classifier has already been trained
         using the `train_top` method. It retrains the top part of the extended model and also some of the last layers
@@ -218,13 +221,16 @@ class TransferLearning(Learning):
 
         # Load weights
         self.model.load_weights(os.path.join(settings.WEIGHTS_DIR,input_weights_name))
+        if not perc:
+            # Freeze layers
+            for layer in self.model.layers[:n_layers]:
+               layer.trainable = False
 
-        # Freeze layers
-        for layer in self.model.layers[:n_layers]:
-           layer.trainable = False
-
-        for layer in self.model.layers[n_layers:]:
-           layer.trainable = True
+            for layer in self.model.layers[n_layers:]:
+               layer.trainable = True
+        else:
+            self.freeze_all_pretrained_layers()
+            self.unfreeze_last_pretrained_layers(percentage = perc)
 
         if self.prediction_class_type == "single":
             loss = "binary_crossentropy"
@@ -237,7 +243,9 @@ class TransferLearning(Learning):
         #weights_name = self.model_name+'.finetuned'
         
         # Train
-        self.train(epochs)
+        self.train(epochs)    
+        
+
         
     def train_top(self, epochs):
         """
