@@ -65,7 +65,7 @@ def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, igno
     ignore_pups: if true, no pups are included in the data set (neither in positive nor negative samples)
     """
     import cropping
-    cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups)
+    cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups, blacken)
 
 def generate_overlap_masks():
     #python3 main.py generate-overlap-masks
