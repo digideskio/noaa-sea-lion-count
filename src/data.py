@@ -442,3 +442,14 @@ class AugmentationTransformer(Transformer):
         data['x'] = self.augm.augment(data['x'])
         return data
 
+class SeaLionOrNotLabelTransformer(Transformer):
+    """
+    Transformation from sea lion type labels to binary (sea-lion-or-not) labels
+    """
+    def _transform(self, data):
+        if data['y'] == 'negative':
+            data['y'] = 0
+        else:
+            data['y'] = 1
+
+        return data

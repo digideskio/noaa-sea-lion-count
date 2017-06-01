@@ -34,6 +34,7 @@ class Learning:
         """
 
         self.model = None
+        self.input_shape = input_shape
         self.prediction_class_type = prediction_class_type
         self.mini_batch_size = mini_batch_size
         self.tensor_board = tensor_board
@@ -41,7 +42,7 @@ class Learning:
 
         settings.logger.info("Starting...")
         loader = data.Loader()
-        transform = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(input_shape)))
+        transform = self.data_transformer()
         
         if data_type == 'original':
             train_data = loader.load_original_images()
@@ -59,6 +60,9 @@ class Learning:
             self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
         
         
+    def data_transformer(self):
+        return data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+
     @abc.abstractmethod
     def build(self):
         throw(NotImplemented("Must be implemented by child class."))
@@ -289,6 +293,8 @@ class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
         """
         super().__init__(*args, **kwargs)
 
+    def data_transformer(self):
+        return data.LoadTransformer(data.SeaLionOrNotLabelTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape))))
 
     def extend(self):
         """
