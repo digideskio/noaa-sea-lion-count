@@ -8,6 +8,7 @@ import csv
 import glob
 import os
 import threading
+import itertools
 from ast import literal_eval
 
 import scipy
@@ -279,14 +280,17 @@ class Loader:
 
 class Iterator(object):
     # See: https://github.com/fchollet/keras/blob/master/keras/preprocessing/image.py
-    def __init__(self, n, batch_size, shuffle, seed):
+    def __init__(self, n, batch_size, shuffle, seed, class_balancing = False, classes = None):
         self.n = n
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
-        self.index_generator = self._flow_index(n, batch_size, shuffle, seed)
+        if class_balancing:
+            self.index_generator = self._balanced_flow_index(classes, batch_size, shuffle, seed)
+        else:
+            self.index_generator = self._flow_index(n, batch_size, shuffle, seed)
 
     def reset(self):
         self.batch_index = 0
@@ -313,6 +317,56 @@ class Iterator(object):
             yield (index_array[current_index: current_index + current_batch_size],
                    current_index, current_batch_size)
 
+    def __index_generator(self, indices, shuffle=False, seed=None):
+        i = 0
+        while 1:
+            i = i + 1
+            if seed is not None:
+                np.random.seed(seed + 1)
+
+            if shuffle:
+                indices = np.random.permutation(indices)
+
+            for idx in indices:
+                yield idx
+
+    def _balanced_flow_index(self, classes, batch_size=32, shuffle=False, seed=None):
+        n = len(classes)
+        unique_classes = set(classes)
+        generators = []
+        class_to_indices = {}
+
+        # Create a map from classes to lists of data indices belonging to those classes
+        for clss, idx in zip(classes, itertools.count()):
+            if clss not in class_to_indices:
+                class_to_indices[clss] = []
+            class_to_indices[clss].append(idx)
+
+        # Create infinite generators to generate indices of classes
+        for clss in unique_classes:
+            generators.append(self.__index_generator(class_to_indices[clss], shuffle=shuffle, seed=seed))
+
+        # Create a generator to sequentially get an index from each of the generators
+        def gen_from_generators():
+            while 1:
+                for generator in generators:
+                    yield next(generator)
+
+        # Ensure self.batch_index is 0.
+        self.reset()
+
+        current_idx = 0
+        current_batch = []
+        for idx in gen_from_generators():
+            current_idx += 1
+
+            current_batch.append(idx)
+            current_batch_size = len(current_batch)
+
+            if current_batch_size == batch_size:
+                yield current_batch, current_idx % n, current_batch_size
+                current_batch = []
+
     def __iter__(self):
         # Needed if we want to do something like:
         # for x, y in data_gen.flow(...):
@@ -322,10 +376,15 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 class DataIterator(Iterator):
-    def __init__(self, data, data_transformation, batch_size, shuffle, seed):
+    def __init__(self, data, data_transformation, batch_size, shuffle, seed, class_balancing = False, class_transformation = lambda x: x):
         self.data = data
         self.data_transformation = data_transformation
-        super(DataIterator, self).__init__(len(data), batch_size, shuffle, seed)
+        self.class_transformation = class_transformation
+        if class_balancing:
+            y = [self.class_transformation(d['y']) for d in data]
+        else:
+            y = None
+        super(DataIterator, self).__init__(len(data), batch_size, shuffle, seed, class_balancing = class_balancing, classes = y)
 
     def next(self):
         # Only keep index advancing under lock
@@ -350,7 +409,7 @@ class DataIterator(Iterator):
                 if batch_y is None:
                     batch_y = np.zeros(current_batch_size)
 
-                batch_y[i] = d['y']
+                batch_y[i] = self.class_transformation(d['y'])
         batch_x = preprocess_input(batch_x)
         if batch_y is not None:
             return batch_x, batch_y
@@ -442,14 +501,8 @@ class AugmentationTransformer(Transformer):
         data['x'] = self.augm.augment(data['x'])
         return data
 
-class SeaLionOrNotLabelTransformer(Transformer):
-    """
-    Transformation from sea lion type labels to binary (sea-lion-or-not) labels
-    """
-    def _transform(self, data):
-        if data['y'] == 'negative':
-            data['y'] = 0
-        else:
-            data['y'] = 1
-
-        return data
+def sea_lion_type_to_sea_lion_or_not(sea_lion_label):
+    if sea_lion_label == 'negative':
+        return 0
+    else:
+        return 1

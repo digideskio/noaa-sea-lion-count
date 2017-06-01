@@ -54,14 +54,17 @@ class Learning:
         
         if validate:
             train_val_split = loader.train_val_split(train_data)
-            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
-            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
+            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
+            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform()) # No class balancing for validation
         else:
-            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42)
+            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
         
         
     def data_transformer(self):
         return data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+    
+    def data_class_transform(self):
+        return lambda x: x
 
     @abc.abstractmethod
     def build(self):
@@ -293,8 +296,8 @@ class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
         """
         super().__init__(*args, **kwargs)
 
-    def data_transformer(self):
-        return data.LoadTransformer(data.SeaLionOrNotLabelTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape))))
+    def data_class_transform(self):
+        return data.sea_lion_type_to_sea_lion_or_not
 
     def extend(self):
         """
