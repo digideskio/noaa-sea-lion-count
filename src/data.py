@@ -139,7 +139,8 @@ class Loader:
 
         logger.debug('Loading train set %s images' % data_type)
         images = []
-        # Get all train original images
+
+        # Get all images
         filenames_pos = sorted(glob.glob(os.path.join(crops_dir,'pos',"*.jpg")))
         filenames_neg = sorted(glob.glob(os.path.join(crops_dir,'neg',"*.jpg")))
         filenames = filenames_pos + filenames_neg
@@ -169,6 +170,7 @@ class Loader:
             images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
                            'm': meta,
                            'y': y})
+        logger.debug('Loaded %s images' % len(images))
         return images
         
     def load_original_images(self, dataset = "train"):
