@@ -465,12 +465,13 @@ def coords_overlap(coord1, coord2, bbox_size):
     return intersection / float(bbox_size*bbox_size)
     
 
-def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=False, blackout=False):
+def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=False, blackout=False, blackout_diameter=100):
     """
     :param sea_lion_size: The width/height (in the actual image) of a sea lion crop (default 100 by 100)
     :param num_negative_crops: The total number of negative crops generated, over all images
     :param ignore_pups: If true, pups will not result in positive crops
     :param blackout: If true, the crops' corners will be made black and only a circle will remain
+    :param blackout_diameter: The diameter of the blackout mask
     """
     loader = data.Loader()
     images = loader.load_original_images()
@@ -529,7 +530,8 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
             crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
             
             if blackout:
-                crop_img = utils.blackout(crop_img, [(0,0)], sea_lion_size)
+                blackout_coord = (sea_lion_size-blackout_diameter)/2
+                crop_img = utils.blackout(crop_img, [(blackout_coord,blackout_coord)], blackout_diameter)
 
             cropname = category + '_id' + filename + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
             num_neg -= 1

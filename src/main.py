@@ -53,7 +53,7 @@ def generate_naive_region_crops(total_crops:int):
         cropper.find_crops()
         cropper.save_crops()
 
-def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False, blackout=False):
+def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False, blackout=False, blackout_diameter=100):
     #python3 main.py generate-individual-crops 20000
     """
     Create positive and negative crops of sea lions from the original training data.
@@ -65,9 +65,11 @@ def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, igno
     ignore_pups: if true, no pups are included in the data set (neither in positive nor negative samples)
     
     blackout: if true, the crops' corners will be made black and only a circle will remain
+
+    blackout_diameter: the diameter of the blackout mask (only used if blackout = True)
     """
     import cropping
-    cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups, blackout)
+    cropping.generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups, blackout, blackout_diameter)
 
 def generate_overlap_masks():
     #python3 main.py generate-overlap-masks
