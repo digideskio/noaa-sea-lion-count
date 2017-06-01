@@ -126,19 +126,9 @@ class Loader:
     def get_train_original_mismatched(self):
         return self.train_original_mismatched
         
-    def load_crop_images(self, data_type):
-        """
-        Load precropped data
-        """
-        
-        assert data_type in ['sea_lion_crops', 'region_crops']
-        if data_type == 'region_crops':
-            crops_dir = settings.REGION_CROPS_DIR
-        else:
-            crops_dir = settings.SEA_LION_CROPS_DIR
-
-        logger.debug('Loading train set %s images' % data_type)
+    def _load_region_crop_images(self):
         images = []
+        crops_dir = settings.REGION_CROPS_DIR
 
         # Get all images
         filenames_pos = sorted(glob.glob(os.path.join(crops_dir,'pos',"*.jpg")))
@@ -170,6 +160,50 @@ class Loader:
             images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
                            'm': meta,
                            'y': y})
+        return images
+
+    def _load_sea_lion_crop_images(self):
+        images = []
+        crops_dir = settings.SEA_LION_CROPS_DIR
+
+        # Get all images
+        filenames = sorted(glob.glob(os.path.join(crops_dir,"*.jpg")))
+        for filename in filenames:
+            #adult_males_id923_1clions_at_1944-1425_197px
+            #negative_id0_0clions_at_13-913_197px
+            name = utils.get_file_name_part(filename)
+            
+            name_parts = name.split('_id')
+            clss = name_parts[0]
+            image_name = name_parts[1].split('_')[0]
+
+            if image_name in self.train_original_mismatched:
+                # Skip images marked as mismatched
+                continue
+            
+            meta = {
+                'full_name': name,
+                'filename': image_name
+            }
+            
+            images.append({'x': (lambda filename: lambda: self.load(filename))(filename),
+                           'm': meta,
+                           'y': clss})
+        return images
+
+    def load_crop_images(self, data_type):
+        """
+        Load precropped data
+        """
+        
+        assert data_type in ['sea_lion_crops', 'region_crops']
+        if data_type == 'region_crops':
+            logger.debug('Loading region crop images')
+            images = self._load_region_crop_images()
+        else:
+            logger.debug('Loading sea lion crop images')
+            images = self._load_sea_lion_crop_images()
+        
         logger.debug('Loaded %s images' % len(images))
         return images
         
