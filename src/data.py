@@ -138,8 +138,8 @@ class Loader:
             #10clions_at40-1680_in66_400px
             #0clions_at0-2471_in579_400px
             name = utils.get_file_name_part(filename)
-            #image_name = name.split('_')[1].split('d')[1]+'.jpg'
-            image_name = name.split('in')[1].split('_')[0]+'.jpg'
+            #image_name = name.split('_')[1].split('d')[1]
+            image_name = name.split('in')[1].split('_')[0]
             if image_name in self.train_original_mismatched:
                 # Skip images marked as mismatched
                 continue
