@@ -109,7 +109,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
     elif data_type == 'sea_lion_crops':
-        input_shape = (100,100,3)
+        input_shape = (197,197,3)
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
 
