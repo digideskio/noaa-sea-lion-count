@@ -28,7 +28,7 @@ PRETRAINED_MODELS = {
 }
 
 class Learning:
-    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", mini_batch_size = 32, tensor_board = True, validate = True):
+    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", mini_batch_size = 32, tensor_board = False, validate = True):
         """
         :param prediction_class_type: "single" or "multi"
         """
