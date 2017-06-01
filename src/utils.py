@@ -45,9 +45,9 @@ def crop_image(image, coordinates, crop_size):
     else: # regular 2D matrix
         return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size]
 
-def blacken(crop, locations, sea_lion_size):
+def blackout(crop, locations, sea_lion_size):
     """
-    Return a crop with only circles around the marked locations visible, and the corners turned black.
+    Draws circles of given size at a given list of locations in an image
 
     :param crop: The crop to work on
     :param locations: A list of locations of top-left corners of circles
