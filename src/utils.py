@@ -45,24 +45,27 @@ def crop_image(image, coordinates, crop_size):
     else: # regular 2D matrix
         return image[y_coordinate : y_coordinate + crop_size, x_coordinate : x_coordinate + crop_size]
 
-def blacken_crop(crop, rad):
+def blacken(crop, locations, sea_lion_size):
     """
-    Return a crop with only the sealion visible and the corners turned black.
+    Return a crop with only circles around the marked locations visible, and the corners turned black.
 
-    :params crop: The image returned by crop_image
-    :params rad: The radius of the output circle.
+    :param crop: The crop to work on
+    :param locations: A list of locations of top-left corners of circles
+    :param diameter: The diameter of the circles to be drawn
     """
-    from PIL import Image
-    from PIL import ImageDraw
+    import numpy as np
+    from PIL import Image, ImageDraw
+    
+    height, width, _ = crop.shape
     crop = Image.fromarray(crop.astype('uint8'))
-    circle = Image.new('L', (rad * 2, rad * 2), 0)
-    draw = ImageDraw.Draw(circle)
-    draw.ellipse((0, 0, rad * 2, rad * 2), fill=255)
-    alpha = Image.new('L', crop.size, 255)
-    w, h = crop.size
-    alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
-    alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
-    alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
-    alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
-    crop.putalpha(alpha)
-    return crop
+    mask = Image.new('1', (width, height), color=0)
+    draw = ImageDraw.Draw(mask)
+    
+    for x, y in locations:
+        draw.ellipse((x, y, x + sea_lion_size, y + sea_lion_size), fill=255)
+    
+    result = Image.new('RGB', (width, height), color=(0,0,0))
+    result.paste(crop, mask=mask)
+    del crop, mask, draw
+    
+    return np.array(result)

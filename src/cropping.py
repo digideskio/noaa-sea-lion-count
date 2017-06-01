@@ -528,18 +528,10 @@ def generate_individual_crops(sea_lion_size, num_negative_crops, ignore_pups=Fal
             crop_img = utils.crop_image(img, (x_coord, y_coord), sea_lion_size)
             
             if blacken:
-                #crop_img = Image.fromarray(crop_img.astype('uint8'))
-                rad = int(sea_lion_size/2)
-                crop_img = utils.blacken_crop(crop_img, rad)
-                cropname = category + '_id' + filename + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.png'
-                num_neg -= 1
-                crop_img.save(os.path.join(dir, cropname))
-            else:            
-                # Resize to output size - not needed for networks if it's uniform
-                #crop = scipy.misc.imresize(crop, size = out_size)
+                crop_img = utils.blacken(crop_img, [(0,0)], sea_lion_size)
 
-                cropname = category + '_id' + filename + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
-                num_neg -= 1
-                scipy.misc.imsave(os.path.join(dir, cropname), crop_img)
+            cropname = category + '_id' + filename + '_' + str(1 * (num_neg<=0)) + 'clions_at_' + str(x_coord) + '-' + str(y_coord) + '_' + str(sea_lion_size) + 'px.jpg'
+            num_neg -= 1
+            scipy.misc.imsave(os.path.join(dir, cropname), crop_img)
             
     
