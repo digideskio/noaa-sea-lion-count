@@ -29,7 +29,7 @@ class RegionCropper:
     """
     Class for cropping images
     """
-    def __init__(self, crop_size, attention = False):
+    def __init__(self, crop_size, attention, diameter = None, output_size = None):
         """        
         :param crop_size: Int, the size of the desired crops
         :param attention: Boolean, whether to apply blackout attention to the crops
@@ -48,6 +48,11 @@ class RegionCropper:
         
         self.candidate_matrix = None
         self.candidate_current_ix = {'row': 0, 'column': 0}
+        
+        self.blackout_masks = []
+        self.diameter = diameter
+        
+        self.output_size = output_size
         
     def init_candidate_matrix(self):
         """
@@ -295,14 +300,7 @@ class RegionCropper:
         column = random.randint(0,size[1] - self.crop_size)
         crop_ix = {'row':row,'column':column}
         return crop_ix
-    
-    def attention_blackout(self, image_crop, meta):
-        """
-        Apply the blackout attention transformation to an image crop
-        """
-        #TODO
-        new_crop = np.zeros(image_crop.shape)
-        return new_crop
+
     
     def save_crop(self, image_crop, meta):
         """
@@ -313,7 +311,8 @@ class RegionCropper:
             filepath = os.path.join(settings.CROPS_OUTPUT_DIR,'pos',filename)
         else:
             filepath = os.path.join(settings.CROPS_OUTPUT_DIR,'neg',filename)
-        scipy.misc.imsave(filepath, image_crop)
+        resized_crop = scipy.misc.imresize(image_crop, (self.output_size, self.output_size, 3))
+        scipy.misc.imsave(filepath, resized_crop)
             
     def get_blacked_out_perc(self, crop):
         """
@@ -326,6 +325,7 @@ class RegionCropper:
         """
         Save negative crops to disk
         """
+        
         # Create weight output dir if it does not exist
         if not os.path.exists(os.path.join(settings.CROPS_OUTPUT_DIR,'neg')):
             os.makedirs(os.path.join(settings.CROPS_OUTPUT_DIR,'neg'))      
@@ -347,6 +347,9 @@ class RegionCropper:
             if self.get_blacked_out_perc(image_dotted_crop) > 0.1:
                 logger.info("Blackout crop ignored: "+str(crop_meta[1]))
             else:
+                if self.attention:
+                    locations = random.choice(self.blackout_masks)
+                    image_crop = utils.blackout(image_crop, locations, self.diameter)
                 self.save_crop(image_crop,crop_meta[1])
                 count += 1
             self.current_image = temp
@@ -366,7 +369,7 @@ class RegionCropper:
         self.max_sealions_neg = max_sealions_neg
         self.negative_crops = []
         train_ids = list(self.loader.train_original_counts.keys())
-        
+        logger.info('Searching '+str(wanted_crops)+' negative crops...')
         
         while len(self.negative_crops) < wanted_crops:
             self.current_image_id = random.choice(train_ids)
@@ -390,7 +393,32 @@ class RegionCropper:
                     'crop_size': self.crop_size}
             self.negative_crops.append((crop_ix,meta))
         self.save_negative_crops()
+        
 
+    
+    def attention_blackout(self, image_crop, meta, skip_pups = True):
+        """
+        Apply the blackout attention transformation to an image crop
+        """
+        image_id = meta['id']
+        crop_ix = {'row': meta['row'], 'column': meta['column']}
+
+        locations = []
+        sea_lion_size = float(self.diameter)
+        radius = sea_lion_size / 2.
+        for coordinates in cropper.loader.train_original_coordinates[image_id]:
+            if skip_pups and coordinates['category'] == 'pups':
+                continue
+            absolute_sealion = {'row':      float(coordinates['y_coord']),
+                                'column':   float(coordinates['x_coord'])}
+            if not cropper.is_inside(absolute_sealion, crop_ix):
+                continue
+            relative_sealion = {'row':       absolute_sealion['row'] - crop_ix['row'] - radius,
+                                'column':    absolute_sealion['column'] - crop_ix['column'] - radius}
+            locations.append((relative_sealion['column'],relative_sealion['row']))
+        self.blackout_masks.append(locations)
+        attention_crop = utils.blackout(image_crop, locations, sea_lion_size)
+        return attention_crop
 
 
 def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
