@@ -61,7 +61,14 @@ class Learning:
         
         
     def data_transformer(self):
-        return data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+        if self.input_shape == (224,224,3):
+            #If input shape is (224, 224, 3) there is no need to use ResizeTransformer()
+            settings.logger.info("Resizing images deactivated")
+            transformer = data.LoadTransformer(data.AugmentationTransformer())
+        else:
+            settings.logger.info("Resizing images activated")
+            transformer = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+        return transformer
     
     def data_class_transform(self):
         return lambda x: x
@@ -113,8 +120,8 @@ class Learning:
         #TODO get unqie_instances automatically 
         unique_instances = 50000
         # Train
-        steps_per_epoch = 2#math.ceil(0.7*unique_instances/self.mini_batch_size)
-        validation_steps = 1#math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
+        validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
         self.print_layers_info()
         self.model.fit_generator(
             generator = self.iterator,

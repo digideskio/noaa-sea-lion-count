@@ -108,7 +108,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
-        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
+        tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64, tensor_board = True)
 
     tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.train_top(epochs = 200)
