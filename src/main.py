@@ -26,32 +26,24 @@ def test_iterators():
         print('First in batch: {0}'.format(batch[0].shape))
         print('Batch size: {0}'.format(len(batch)))
         
-def generate_positive_region_crops(crop_size:int, min_sealions_pos:int, max_overlap_perc:float, plot:bool, sliding_perc:float):
-    #nice -19 python main.py generate-positive-region-crops 500 15 0.5 False 0.1
+    
+def generate_region_crops(min_sealions_pos:int,  blackout:bool):
+    #python3 main.py generate-region-crops 5 True
     import cropping
-    cropper = cropping.RegionCropper(crop_size)
-    cropper.find_pos_crops_dataset(min_sealions_pos, max_overlap_perc, plot, sliding_perc)     
-def generate_negative_region_crops(crop_size:int, wanted_crops:int, max_sealions_neg:int):
-    #nice -19 python main.py generate-negative-region-crops 500 1000 2
-    import cropping
-    cropper = cropping.RegionCropper(crop_size)
+    
+    output_size = 224
+    crop_size = 400
+    diameter = 100
+    cropper = cropping.RegionCropper(crop_size = crop_size, attention = blackout, diameter = diameter, output_size = output_size)
+
+    sliding_perc = 0.1
+    max_overlap_perc = 0.5
+    plot = False
+    cropper.find_pos_crops_dataset(min_sealions_pos, max_overlap_perc, plot, sliding_perc)
+
+    wanted_crops = 70000
+    max_sealions_neg = 0
     cropper.find_neg_crops_dataset(wanted_crops, max_sealions_neg)
-
-def generate_naive_region_crops(total_crops:int):
-    #python main.py generate-naive-region-crops 200000
-    """
-    Divide the cropping task in rounds to leverage the trade-off between efficiency and risk (the Cropper class
-    first find all the crops and then writes them to disk) 
-    """
-    import cropping
-
-    crops_per_round = 1000
-    rounds = round(total_crops / crops_per_round)
-    logger.info('Attempting to make '+str(total_crops)+' region crops in '+str(rounds)+' rounds...')
-    for i in range(rounds):
-        cropper = cropping.RegionCropper(crop_size = 224, total_crops = crops_per_round, pos_perc = 0.5, min_sealions_herd = 10)
-        cropper.find_crops()
-        cropper.save_crops()
 
 def generate_individual_crops(num_negative_crops:int, *, sea_lion_size=100, ignore_pups=False, blackout=False, blackout_diameter=100):
     #python3 main.py generate-individual-crops 20000
@@ -189,8 +181,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
 
 if __name__ == '__main__':
     run(test_iterators,
-        generate_positive_region_crops,
-        generate_negative_region_crops,
+        generate_region_crops,
         generate_individual_crops,
         fine_tune_network_perc,
         generate_overlap_masks,
