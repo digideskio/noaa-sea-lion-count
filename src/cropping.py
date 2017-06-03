@@ -406,12 +406,12 @@ class RegionCropper:
         locations = []
         sea_lion_size = float(self.diameter)
         radius = sea_lion_size / 2.
-        for coordinates in cropper.loader.train_original_coordinates[image_id]:
+        for coordinates in self.loader.train_original_coordinates[image_id]:
             if skip_pups and coordinates['category'] == 'pups':
                 continue
             absolute_sealion = {'row':      float(coordinates['y_coord']),
                                 'column':   float(coordinates['x_coord'])}
-            if not cropper.is_inside(absolute_sealion, crop_ix):
+            if not self.is_inside(absolute_sealion, crop_ix):
                 continue
             relative_sealion = {'row':       absolute_sealion['row'] - crop_ix['row'] - radius,
                                 'column':    absolute_sealion['column'] - crop_ix['column'] - radius}
