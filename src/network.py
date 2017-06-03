@@ -219,6 +219,9 @@ class TransferLearning(Learning):
 
         if summary:
             print(self.model.summary())
+            
+    def load_weights(self,input_weights_name):
+        self.model.load_weights(os.path.join(settings.WEIGHTS_DIR,input_weights_name))
     
     def fine_tune_extended(self, epochs, input_weights_name, n_layers = 126, perc = None):
         """
@@ -234,7 +237,7 @@ class TransferLearning(Learning):
         """
 
         # Load weights
-        self.model.load_weights(os.path.join(settings.WEIGHTS_DIR,input_weights_name))
+        self.load_weights(input_weights_name)
         if not perc:
             # Freeze layers
             for layer in self.model.layers[:n_layers]:
