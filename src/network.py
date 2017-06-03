@@ -83,14 +83,11 @@ class Learning:
         callbacks_list = []
         trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
         # Create weight output dir if it does not exist
-        base_dir = strftime("%Y%m%dT%H%M%S")+'_'+self.arch_name + "-lay"+str(trainable_layers)
-        weights_dir = os.path.join(settings.WEIGHTS_DIR, base_dir)
-        if not os.path.exists(weights_dir):
-            os.makedirs(weights_dir)
+        base_name = self.arch_name + "-lay"+str(trainable_layers)
 
         # Save the model with best validation accuracy during training
         
-        weights_name = base_dir+"-ep{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
+        weights_name = base_name+"-ep{epoch:03d}-tloss{loss:.4f}-vloss{val_loss:.4f}.hdf5"
         
         weights_path = os.path.join(settings.WEIGHTS_DIR, weights_name)
         checkpoint = keras.callbacks.ModelCheckpoint(
@@ -102,9 +99,12 @@ class Learning:
         callbacks_list.append(checkpoint)
                  
         if self.tensor_board:
+            log_dir = os.path.join(settings.TENSORBOARD_LOGS_DIR,strftime("%Y%m%dT%H%M%S")+'_'+base_name)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
             # Output tensor board logs
             tf_logs = keras.callbacks.TensorBoard(
-                log_dir = os.path.join(settings.TENSORBOARD_LOGS_DIR,base_dir),
+                log_dir = log_dir,
                 histogram_freq = 1,
                 write_graph = True,
                 write_images = True)
@@ -113,8 +113,8 @@ class Learning:
         #TODO get unqie_instances automatically 
         unique_instances = 50000
         # Train
-        steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
-        validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        steps_per_epoch = 2#math.ceil(0.7*unique_instances/self.mini_batch_size)
+        validation_steps = 1#math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
         self.print_layers_info()
         self.model.fit_generator(
             generator = self.iterator,
