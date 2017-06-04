@@ -148,9 +148,9 @@ class Loader:
             y = filename.split(os.path.sep)[-2]
             assert y in ['pos','neg']
             if y == 'pos':
-                y = 1
+                y = 'positive'
             else:
-                y = 0
+                y = 'negative'
             meta = {
                 'full_name': name,
                 'filename': image_name,
@@ -242,7 +242,7 @@ class Loader:
             # Get all test original images
             filenames = sorted(glob.glob(os.path.join(settings.TEST_ORIGINAL_IMAGES_DIR, "*.jpg")))
             for filename in filenames:
-                name = self.get_file_name_part(filename)
+                name = utils.get_file_name_part(filename)
 
                 if name in self.train_original_mismatched:
                     # Skip images marked as mismatched
