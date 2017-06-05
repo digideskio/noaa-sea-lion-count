@@ -51,6 +51,10 @@ This will happen if we want to allocate a lot of hours for example. Sooner or la
 So now we are still in the login node but the experiment is running in a different one. We may want to access that node in order to check how things are going, like monitoring GPU usage via the `watch -n1 nvidia-smi` command. In order to do so we have to run `squeue -u $(whoami)`. I four job has been assigned the node `gcn34` for example,we will have to type `ssh gcn34`, input our password and we will be in the allocated node.
 What if we just want to see the printouts of our script? Although the experiment is running you don't see the output directly, even if you are in the node where it is running.  However you see that some files are being generated named like `slurm-3130333.out` for example. These files contains the output of the experiment so to visualize each of them you can simply do `cat slurm-3130333.out`. This should be enough to monitoring it but I also believe that there must be a more confortable way to deal with it, I will update this when I find something.
 
+## Shared folder
+We don't have a shared folder as such, but surfsara gave us a workaround, we can use the following folder:
+`/home/gdemo001/MLiP/noaa-sea-lion-count`
+
 ## That's it
 If something is not clear tell me and I will try to explain better or elaborate more. Also if you think that it would be interesting to include more explanations just tell me ;)
 
