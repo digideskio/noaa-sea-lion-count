@@ -113,7 +113,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.train_top(epochs = 200)
 
-def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
     """
     Fine-tune a trained extended network. To do this, first the top
     of the extended network must have been trained.
