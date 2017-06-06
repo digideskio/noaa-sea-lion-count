@@ -1,18 +1,61 @@
+import data
+import network
+import numpy as np
+import os
+from preprocessing import zoom_box
+import scipy
+import scipy.ndimage
+import settings
 import skimage.feature
 import skimage.morphology
 import skimage.measure
-import numpy as np
-import settings
-import network
-from preprocessing import zoom_box
+
+def generate_heatmaps(dataset, network_type):
+    segm = Segmenter(network_type)
+    loader = data.Loader()
+    images = loader.load_original_images(dataset=dataset)
+    
+    if dataset == 'train':
+        outdir = settings.TRAIN_HEATMAP_DIR
+    elif dataset == 'test_st1':
+        outdir = settings.TEST_HEATMAP_DIR
+    if network_type == 'region':
+        netname = settings.REGION_HEATMAP_NETWORK_WEIGHT_NAME
+    elif network_type == 'individual':
+        netname = settings.INDIVIDUAL_HEATMAP_NETWORK_WEIGHT_NAME
+    outdir = os.path.join(outdir, netname)
+    
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    
+    for img in images:
+        filename = img['m']['filename']
+        print('Generating heatmap for image: ' + filename)
+        
+        image = img['x']()
+        if network_type == 'region':
+            zoom = 224/400
+            image = scipy.ndimage.zoom(image, [zoom, zoom, 1])
+        
+        heatmap = segm.heatmap(image)
+        
+        scipy.misc.imsave(os.path.join(outdir, filename + '.jpg'), (255*heatmap).astype('uint8'))
+    
 
 class Segmenter():
-    def __init__(self):
-        self.network = network.LearningFullyConvolutional()
-        self.network.build(weights_file = settings.HEATMAP_NETWORK_WEIGHT_NAME, num_classes = 1)
+    def __init__(self, network_type):
+        self.network = network.LearningFullyConvolutional(mini_batch_size=32, class_balancing=False, tensor_board=False, validate=False)
+        self.network_type = network_type
+        
+        if self.network_type == 'region':
+            self.network.build(weights_file = settings.REGION_HEATMAP_NETWORK_WEIGHT_NAME, num_classes = 1)
+        elif self.network_type == 'individual':
+            self.network.build(weights_file = settings.INDIVIDUAL_HEATMAP_NETWORK_WEIGHT_NAME, num_classes = 1)
+        else:
+            raise NotImplementedError('Fully convolutional network type not implemented: ' + network_type)
 
     def heatmap(self, img):
-        return self.network.build_multi_scale_heatmap(img)
+        return self.network.build_multi_scale_heatmap(img, scales=[1.5,1,0.7])
 
     def normalize(self, heatmap):
         return (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min()) 
@@ -21,7 +64,7 @@ class Segmenter():
         # return np.maximum(heatmap - np.percentile(heatmap, q = 0.75), 0)
         return (heatmap > thr) * 1
 
-    def find_bounding_boxes(self, img, display = False):
+    def find_bounding_boxes(self, img, display = False): # not used currently - carried over from last project
 
         def display_img_and_heatmap(img, heatmap, bounding_boxes, zoomed_bounding_boxes):
             import matplotlib.pyplot as plt

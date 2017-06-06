@@ -27,7 +27,7 @@ def test_iterators():
         print('Batch size: {0}'.format(len(batch)))
         
     
-def generate_region_crops(min_sealions_pos:int,  blackout:bool):
+def generate_region_crops(min_sealions_pos:int, blackout:bool):
     #python3 main.py generate-region-crops 5 True
     import cropping
     
@@ -73,6 +73,18 @@ def generate_overlap_masks():
     
     import cropping
     cropping.generate_overlap_masks()
+
+def generate_heatmaps(dataset:parameters.one_of('train', 'test_st1'), network_type:parameters.one_of('region', 'individual')):
+    """
+    Generate fully convolutional heatmaps 
+    
+    dataset: the data set to apply it to ('train' or 'test_st1')
+    
+    network_type: type of network to apply it to ('region' or 'individual')
+    """
+    import heatmap
+    heatmap.generate_heatmaps(dataset, network_type)
+
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
@@ -183,7 +195,8 @@ if __name__ == '__main__':
     run(test_iterators,
         generate_region_crops,
         generate_individual_crops,
-        fine_tune_network_perc,
         generate_overlap_masks,
+        generate_heatmaps,
         train_top_network,
-        fine_tune_network)
+        fine_tune_network,
+        fine_tune_network_perc)

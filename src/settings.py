@@ -23,6 +23,7 @@ TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 CROPS_INPUT_DIR               = os.path.join(TRAIN_DIR, "crops")
 OVERLAP_MASKS_DIR             = os.path.join(TRAIN_DIR, "overlap_masks")
+TRAIN_HEATMAP_DIR             = os.path.join(TRAIN_DIR, "heatmaps")
 REGION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "region_crops")
 SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
 
@@ -32,6 +33,7 @@ TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainI
 
 
 TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
+TEST_HEATMAP_DIR             = os.path.join(TEST_DIR, "heatmaps")
 
 ## Imagenet metadata
 
@@ -62,7 +64,8 @@ AUGMENTATION_BLUR_RANGE = [0., 1]
 # Problem-specific settings
 
 ## Heatmap settings
-HEATMAP_NETWORK_WEIGHT_NAME = ""
+REGION_HEATMAP_NETWORK_WEIGHT_NAME = "region-blackout-resnet-lay107-ep006-tloss0.0064-vloss0.0099.hdf5"
+INDIVIDUAL_HEATMAP_NETWORK_WEIGHT_NAME = "indiv-resnet-lay102-ep004-tloss0.0311-vloss0.0419.hdf5"
 
 # Logging
 ## create logger

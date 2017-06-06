@@ -28,7 +28,7 @@ PRETRAINED_MODELS = {
 }
 
 class Learning:
-    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", mini_batch_size = 32, tensor_board = False, validate = True):
+    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", class_balancing = True, mini_batch_size = 32, tensor_board = False, validate = True):
         """
         :param prediction_class_type: "single" or "multi"
         """
@@ -54,10 +54,10 @@ class Learning:
         
         if validate:
             train_val_split = loader.train_val_split(train_data)
-            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
+            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
             self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform()) # No class balancing for validation
         else:
-            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
+            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
         
         
     def data_transformer(self):
@@ -371,7 +371,7 @@ class LearningFullyConvolutional(TransferLearning):
         else:
             # Get the trained model
             trained_model = keras.models.load_model(os.path.join(settings.WEIGHTS_DIR, weights_file), custom_objects={'precision': metrics.precision, 'recall': metrics.recall})
-            print(trained_model.summary())
+            #print(trained_model.summary())
             
             # Get the base model (i.e., without the last dense layer)
             trained_base_model = keras.models.Model(input=trained_model.input, output=trained_model.layers[-3].output)
@@ -413,19 +413,17 @@ class LearningFullyConvolutional(TransferLearning):
     def build_heatmap(self, img, img_size, axes):
         probas = self.forward_pass_resize(img, img_size)
 
-        import imagenettool
-
         x = probas[0, :, :, np.array(axes)].sum(axis=0)
         print("size of heatmap: " + str(x.shape))
         return x
 
-    def build_multi_scale_heatmap(self, img, axes = [0]):
+    def build_multi_scale_heatmap(self, img, scales=[1], axes = [0]): # scales=[1.5,1,0.7]
 
         shape = img.shape
 
         heatmaps = []
         
-        for scale in [2.0, 1.75, 1.25, 1.0]:
+        for scale in scales:
             size = (round(shape[0] * scale), round(shape[1] * scale), shape[2])
             heatmaps.append(self.build_heatmap(img, size, axes))
 
@@ -433,6 +431,7 @@ class LearningFullyConvolutional(TransferLearning):
 
         heatmaps = [skimage.transform.resize(heatmap, largest_heatmap_shape, preserve_range = True).astype("float32") for heatmap in heatmaps]
         geom_avg_heatmap = np.power(functools.reduce(lambda x, y: x*y, heatmaps), 1.0 / len(heatmaps))
+        #avg_heatmap = functools.reduce(lambda x, y: x+y, heatmaps) / len(heatmaps)
         
         return geom_avg_heatmap
 
