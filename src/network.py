@@ -28,7 +28,7 @@ PRETRAINED_MODELS = {
 }
 
 class Learning:
-    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", mini_batch_size = 32, tensor_board = False, validate = True):
+    def __init__(self, data_type = "original", input_shape = (300,300,3), prediction_class_type = "multi", class_balancing = True, mini_batch_size = 32, tensor_board = False, validate = True):
         """
         :param prediction_class_type: "single" or "multi"
         """
@@ -44,8 +44,10 @@ class Learning:
         loader = data.Loader()
         transform = self.data_transformer()
         
-        if data_type == 'original':
-            train_data = loader.load_original_images()
+        if data_type == 'original_train':
+            train_data = loader.load_original_images(dataset = 'train')
+        if data_type == 'original_test':
+            train_data = loader.load_original_images(dataset = 'test_st1')
         elif data_type == 'sea_lion_crops':
             train_data = loader.load_crop_images(data_type = data_type)
         elif data_type == 'region_crops':
@@ -54,10 +56,11 @@ class Learning:
         
         if validate:
             train_val_split = loader.train_val_split(train_data)
-            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
-            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform()) # No class balancing for validation
+            self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
+            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform())
+            # No class balancing for validation
         else:
-            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = True, class_transformation = self.data_class_transform())
+            self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
         
         
     def data_transformer(self):
@@ -213,15 +216,13 @@ class TransferLearning(Learning):
         self.base_model = PRETRAINED_MODELS[self.arch_name](weights = 'imagenet', include_top = False, input_shape = input_shape)
         
         # Extend the base model
-        print("Building network using %s as the pretrained architecture..." % (self.arch_name))
+        settings.logger.info("Building network using %s as the pretrained architecture..." % (self.arch_name))
         self.extend()
-        print("Done building the model.")
-
-        if summary:
-            print(self.model.summary())
             
     def load_weights(self,input_weights_name):
-        self.model.load_weights(os.path.join(settings.WEIGHTS_DIR,input_weights_name))
+        weights_filepath = os.path.join(settings.WEIGHTS_DIR,input_weights_name)
+        self.model.load_weights(weights_filepath)
+        settings.logger.info("Loaded weights "+weights_filepath)
     
     def fine_tune_extended(self, epochs, input_weights_name, n_layers = 126, perc = None):
         """
@@ -371,7 +372,7 @@ class LearningFullyConvolutional(TransferLearning):
         else:
             # Get the trained model
             trained_model = keras.models.load_model(os.path.join(settings.WEIGHTS_DIR, weights_file), custom_objects={'precision': metrics.precision, 'recall': metrics.recall})
-            print(trained_model.summary())
+            #print(trained_model.summary())
             
             # Get the base model (i.e., without the last dense layer)
             trained_base_model = keras.models.Model(input=trained_model.input, output=trained_model.layers[-3].output)
