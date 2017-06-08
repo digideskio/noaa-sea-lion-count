@@ -27,7 +27,7 @@ def test_iterators():
         print('Batch size: {0}'.format(len(batch)))
         
     
-def generate_region_crops(min_sealions_pos:int,  blackout:bool):
+def generate_region_crops(min_sealions_pos:int, blackout:bool):
     #python3 main.py generate-region-crops 5 True
     import cropping
     
@@ -74,6 +74,18 @@ def generate_overlap_masks():
     import cropping
     cropping.generate_overlap_masks()
 
+def generate_heatmaps(dataset:parameters.one_of('train', 'test_st1'), network_type:parameters.one_of('region', 'individual')):
+    """
+    Generate fully convolutional heatmaps 
+    
+    dataset: the data set to apply it to ('train' or 'test_st1')
+    
+    network_type: type of network to apply it to ('region' or 'individual')
+    """
+    import heatmap
+    heatmap.generate_heatmaps(dataset, network_type)
+
+
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
 NETWORKS = {
@@ -113,7 +125,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     tl.build(network.lower(), input_shape = input_shape, summary = False)
     tl.train_top(epochs = 200)
 
-def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
     """
     Fine-tune a trained extended network. To do this, first the top
     of the extended network must have been trained.
@@ -130,7 +142,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
     elif data_type == 'sea_lion_crops':
-        input_shape = (100,100,3)
+        input_shape = (197,197,3)
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
     
@@ -163,7 +175,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
     elif data_type == 'sea_lion_crops':
-        input_shape = (100,100,3)
+        input_shape = (197,197,3)
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
     
@@ -183,7 +195,8 @@ if __name__ == '__main__':
     run(test_iterators,
         generate_region_crops,
         generate_individual_crops,
-        fine_tune_network_perc,
         generate_overlap_masks,
+        generate_heatmaps,
         train_top_network,
-        fine_tune_network)
+        fine_tune_network,
+        fine_tune_network_perc)

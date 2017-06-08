@@ -57,8 +57,9 @@ class Learning:
         if validate:
             train_val_split = loader.train_val_split(train_data)
             self.iterator = data.DataIterator(train_val_split['train'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
-            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform())
             # No class balancing for validation
+            self.val_iterator = data.DataIterator(train_val_split['validate'], transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = False, class_transformation = self.data_class_transform())
+
         else:
             self.iterator = data.DataIterator(train_data, transform, batch_size = mini_batch_size, shuffle = True, seed = 42, class_balancing = class_balancing, class_transformation = self.data_class_transform())
         
@@ -414,19 +415,17 @@ class LearningFullyConvolutional(TransferLearning):
     def build_heatmap(self, img, img_size, axes):
         probas = self.forward_pass_resize(img, img_size)
 
-        import imagenettool
-
         x = probas[0, :, :, np.array(axes)].sum(axis=0)
         print("size of heatmap: " + str(x.shape))
         return x
 
-    def build_multi_scale_heatmap(self, img, axes = [0]):
+    def build_multi_scale_heatmap(self, img, scales=[1], axes = [0]): # scales=[1.5,1,0.7]
 
         shape = img.shape
 
         heatmaps = []
         
-        for scale in [2.0, 1.75, 1.25, 1.0]:
+        for scale in scales:
             size = (round(shape[0] * scale), round(shape[1] * scale), shape[2])
             heatmaps.append(self.build_heatmap(img, size, axes))
 
@@ -434,6 +433,7 @@ class LearningFullyConvolutional(TransferLearning):
 
         heatmaps = [skimage.transform.resize(heatmap, largest_heatmap_shape, preserve_range = True).astype("float32") for heatmap in heatmaps]
         geom_avg_heatmap = np.power(functools.reduce(lambda x, y: x*y, heatmaps), 1.0 / len(heatmaps))
+        #avg_heatmap = functools.reduce(lambda x, y: x+y, heatmaps) / len(heatmaps)
         
         return geom_avg_heatmap
 
