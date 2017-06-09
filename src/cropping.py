@@ -239,7 +239,7 @@ class RegionCropper:
                         self.candidate_matrix[n][m] = 0
             crop_ix = self.candidate_ix_to_image_ix(candidate_ix)
             image_crop = self.crop_from_current_image(crop_ix)            
-            meta = {'positive': True,
+            meta = {'type': 'pos',
                     'count': self.count_sealions_in_crop(crop_ix, skip_pups = True),
                     'column': crop_ix['column'],
                     'row': crop_ix['row'],
@@ -307,10 +307,7 @@ class RegionCropper:
         Saves the crop in the pos or neg folder
         """
         filename = str(meta['count']) + "clions_at" + str(meta['column'])+'-' + str(meta['row']) +"_in"+str(meta['id'])+"_"+str(meta['crop_size'])+"px.jpg"
-        if meta['positive']:
-            filepath = os.path.join(settings.CROPS_OUTPUT_DIR,'pos',filename)
-        else:
-            filepath = os.path.join(settings.CROPS_OUTPUT_DIR,'neg',filename)
+        filepath = os.path.join(settings.CROPS_OUTPUT_DIR,meta['type'],filename)
         resized_crop = scipy.misc.imresize(image_crop, (self.output_size, self.output_size, 3))
         scipy.misc.imsave(filepath, resized_crop)
             
@@ -385,7 +382,7 @@ class RegionCropper:
             #self.plot_crop_ix(crop_ix)
             #print(n_sealions,self.current_image.shape)
 
-            meta = {'positive': False,
+            meta = {'type': 'neg',
                     'count': n_sealions,
                     'id': self.current_image_id,
                     'column': crop_ix['column'],
@@ -402,7 +399,6 @@ class RegionCropper:
         """
         image_id = meta['id']
         crop_ix = {'row': meta['row'], 'column': meta['column']}
-
         locations = []
         sea_lion_size = float(self.diameter)
         radius = sea_lion_size / 2.
@@ -419,6 +415,48 @@ class RegionCropper:
         self.blackout_masks.append(locations)
         attention_crop = utils.blackout(image_crop, locations, sea_lion_size)
         return attention_crop
+    
+    def find_all_crops_current_image(self):
+        """
+        Finds all crops in the current image using a sliding window approach and
+        the overlapping criteria
+        """
+        sliding_finished = False
+        try:
+            coordinates = self.loader.train_original_coordinates[self.current_image_id]
+        except KeyError:
+            logger.info(self.current_image_id+" has not sealions")
+            sliding_finished = True
+        while not sliding_finished:
+            image_crop = self.crop_from_current_image(self.window_coords)
+            meta = {
+                'count': self.count_sealions_in_crop(self.window_coords, skip_pups = False),
+                'type': 'heatmap',
+                'column': self.window_coords['column'],
+                'row': self.window_coords['row'],
+                'id': self.current_image_id,
+                'crop_size': self.crop_size
+            }
+            self.save_crop(image_crop, meta)
+            sliding_finished = self.slide_window()   
+        return
+
+    def find_all_crops(self, max_overlap_perc):
+
+        self.sliding_px = round(self.crop_size * max_overlap_perc)
+        logger.info('Finding all possible crops with max '+str(max_overlap_perc*100)+'% of overlap...')
+        if not os.path.exists(os.path.join(settings.CROPS_OUTPUT_DIR,'heatmap')):
+            os.makedirs(os.path.join(settings.CROPS_OUTPUT_DIR,'heatmap'))  
+        for image_id in self.loader.train_original_counts:
+            self.current_image_id = image_id#'820'    
+            if self.current_image_id in self.loader.train_original_mismatched:
+                # Skip images marked as mismatched
+                continue
+            self.current_image = self.loader.load(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, self.current_image_id+'.jpg'))
+            self.eval_current_image_size()
+            self.init_candidate_matrix()
+            logger.info('Cropping from '+self.current_image_id+'.jpg')
+            self.find_all_crops_current_image()
 
 
 def crop(img, bounding_boxes, out_size = (300, 300), zoom_factor = 0.7):
