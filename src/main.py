@@ -25,6 +25,15 @@ def test_iterators():
         batch = next(iterator)
         print('First in batch: {0}'.format(batch[0].shape))
         print('Batch size: {0}'.format(len(batch)))
+
+def test_density_map_feature_loading():
+    logger.info('Starting...')
+
+    loader = data.Loader()
+    density_data = loader.load_density_map_feature_crops()
+    
+    for img in density_data:
+        logger.info('Image %s: %s feature(s)' % (img['meta']['image_name'], len(img['features'])))
         
 def generate_heatmap_crops(max_overlap_perc:float):
     crop_size = 400
@@ -212,6 +221,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
 
 if __name__ == '__main__':
     run(test_iterators,
+        test_density_map_feature_loading,
         generate_region_crops,
         generate_individual_crops,
         generate_heatmap_crops,

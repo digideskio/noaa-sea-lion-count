@@ -279,6 +279,82 @@ class Loader:
             
         logger.debug('Loaded %s images' % len(images))
         return images
+
+    def load_density_map_feature_crops(self):
+        """
+        Load density map feature patches.
+        """
+
+        logger.debug('Loading density map features')
+
+        images = {}
+        crops_dir = settings.DENSITY_MAP_FEATURE_CROPS_DIR
+
+        # Get all images
+        filenames = sorted(glob.glob(os.path.join(crops_dir,"*.jpg")))
+        n = 0
+        for filename in filenames:
+            # <image id>_<crop x coordinate>-<crop y coordinate>-<crop width>-<crop height>_<feature name>-<feature setting>.jpg
+            name = utils.get_file_name_part(filename)
+            name_parts = name.split('_')
+
+            image_id = name_parts[0]
+            coordinate_parts = name_parts[1].split('-')
+            feature_parts = name_parts[2].split('-')
+
+            bounding_box = {'x': int(coordinate_parts[0]), 'y': int(coordinate_parts[1]), 'width': int(coordinate_parts[2]), 'height': int(coordinate_parts[3])}
+            feature_name = feature_parts[0]
+            feature_setting = feature_parts[1]
+
+            key = str((image_id, bounding_box.values()))
+
+            if image_id in self.train_original_mismatched:
+                # Skip images marked as mismatched
+                continue
+
+            n += 1
+
+            # Add image patch if it does not exist yet
+            if key not in images:
+                # Get coordinates of sea lions in the original full-size image
+                orig_coordinates = self.train_original_coordinates[image_id] if image_id in self.train_original_coordinates else []
+
+                # Get all sea lion coordinates that are within this patch and transform coordinates to the patch coordinate base
+                coordinates = []
+                for coord in orig_coordinates:
+                    x = int(float(coord['x_coord']))
+                    y = int(float(coord['y_coord']))
+                    if (
+                            bounding_box['x'] <= x < bounding_box['x'] + bounding_box['width']
+                        and bounding_box['y'] <= y < bounding_box['y'] + bounding_box['height']):
+                        coordinates.append({
+                            'x_coord': x - bounding_box['x'],
+                            'y_coord': y - bounding_box['y'],
+                            'category': coord['category']})
+
+                images[key] = {
+                    'features': {}, 
+                    'meta': {
+                        'image_name': image_id,
+                        'patch': bounding_box,
+                        'coordinates': coordinates
+                    }
+                }
+
+            # Add feature group if it does not exist yet
+            if feature_name not in images[key]['features']:
+                images[key]['features'][feature_name] = {}
+            
+            # Add feature
+            images[key]['features'][feature_name][feature_setting] = (lambda filename: lambda: self.load(filename))(filename)
+            
+        # Turn into list
+        images = [img for img in images.values()]
+
+        logger.debug('Loaded %s features for %s images' % (n, len(images)))
+
+        return images
+
         
     def load_original_images(self, dataset = "train"):
         """

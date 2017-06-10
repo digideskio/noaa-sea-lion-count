@@ -26,6 +26,7 @@ OVERLAP_MASKS_DIR             = os.path.join(TRAIN_DIR, "overlap_masks")
 TRAIN_HEATMAP_DIR             = os.path.join(CROPS_INPUT_DIR, "heatmaps")
 REGION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "region_crops")
 SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
+DENSITY_MAP_FEATURE_CROPS_DIR = os.path.join(CROPS_INPUT_DIR, "density_map_feature_crops")
 
 TRAIN_COORDINATES_CSV         = os.path.join(TRAIN_LABELS_DIR, "coordinates.csv")
 TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
