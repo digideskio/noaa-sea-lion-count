@@ -23,6 +23,7 @@ TRAIN_DOTTED_IMAGES_DIR       = os.path.join(TRAIN_DIR, "dotted")
 TRAIN_LABELS_DIR              = os.path.join(TRAIN_DIR, "labels")
 CROPS_INPUT_DIR               = os.path.join(TRAIN_DIR, "crops")
 OVERLAP_MASKS_DIR             = os.path.join(TRAIN_DIR, "overlap_masks")
+TRAIN_FEATURES_DIR            = os.path.join(TRAIN_DIR, "features")
 TRAIN_HEATMAP_DIR             = os.path.join(CROPS_INPUT_DIR, "heatmaps")
 REGION_CROPS_DIR              = os.path.join(CROPS_INPUT_DIR, "region_crops")
 SEA_LION_CROPS_DIR            = os.path.join(CROPS_INPUT_DIR, "sea_lion_crops")
@@ -33,8 +34,9 @@ TRAIN_COUNTS_CSV              = os.path.join(TRAIN_LABELS_DIR, "counts.csv")
 TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainImages.txt")
 
 
-TEST_ORIGINAL_IMAGES_DIR     = os.path.join(TEST_DIR, "original")
-TEST_HEATMAP_DIR             = os.path.join(TEST_DIR, "heatmaps")
+TEST_ORIGINAL_IMAGES_DIR      = os.path.join(TEST_DIR, "original")
+TEST_HEATMAP_DIR              = os.path.join(TEST_DIR, "heatmaps")
+TEST_FEATURES_DIR             = os.path.join(TEST_DIR, "features")
 
 ## Imagenet metadata
 

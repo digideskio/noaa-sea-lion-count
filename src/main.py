@@ -104,6 +104,19 @@ def generate_heatmaps(dataset:parameters.one_of('train', 'test_st1'), network_ty
     import heatmap
     heatmap.generate_heatmaps(dataset, network_type)
 
+def generate_features(dataset:parameters.one_of('train', 'test_st1'), *, start=0, end=-1):
+    """
+    Generate features for the given part of the data set 
+    
+    dataset: the data set to apply it to ('train' or 'test_st1')
+    
+    start: the first image ID to generate features of
+    
+    end: the last image ID to generate features of, *exclusive* (e.g., 0-1000 generates features for 0,1,...,999). -1 indicates the end of the data set
+    """
+    import feature
+    feature.run_feature_generation(dataset, start, end)
+
 
 # "network": (# layers frozen in finetuning, network file to continue with)
 # numbers taken from previous project, might need to be changed
@@ -227,6 +240,7 @@ if __name__ == '__main__':
         generate_heatmap_crops,
         generate_overlap_masks,
         generate_heatmaps,
+        generate_features,
         train_top_network,
         fine_tune_network,
         fine_tune_network_perc)
