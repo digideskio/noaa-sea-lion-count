@@ -283,6 +283,34 @@ class Loader:
     def load_density_map_feature_crops(self):
         """
         Load density map feature patches.
+
+        The output is:
+
+        [ # A list of dicts for each unique image patch, containing all features corresponding to that patch
+            {
+                'features': { # Feature bank; a dictionary that groups feature types together (e.g., all LOGs are grouped)
+                    <feature name>: { # A dictionary mapping from specific feature type settings to feature images
+                        <feature setting>: <function to load feature image>
+                    }
+                },
+                'meta': {
+                    'image_name': <image id>,
+                    'patch': { # Patch coordinates
+                        'x': <x coordinate>,
+                        'y': <y coordinate>,
+                        'width': <width>,
+                        'height': <height>
+                    },
+                    'coordinates': [ # A list of sea lion coordinates within the patch, with coordinates relative to the patch
+                        {
+                            'x': <x coordinate>,
+                            'y': <y coordinate>,
+                            'category': <sea lion type>
+                        }
+                    ]
+                }
+            }
+        ]
         """
 
         logger.debug('Loading density map features')
