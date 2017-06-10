@@ -26,7 +26,17 @@ def test_iterators():
         print('First in batch: {0}'.format(batch[0].shape))
         print('Batch size: {0}'.format(len(batch)))
         
-    
+def generate_heatmap_crops(max_overlap_perc:float):
+    crop_size = 400
+    attention = False
+    output_size = 224
+
+    import cropping
+    crp = cropping.RegionCropper(crop_size = crop_size,
+                                 attention = attention,
+                                 output_size = output_size)
+    crp.find_all_crops(max_overlap_perc = max_overlap_perc)
+   
 def generate_region_crops(min_sealions_pos:int, blackout:bool):
     #python3 main.py generate-region-crops 5 True
     import cropping
@@ -109,7 +119,7 @@ NETWORKS = {
     'resnet':    (75,  'resnet-lay2-ep016-tloss0.0832-vloss0.0521.hdf5')
 }
 
-def train_top_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
+def train_top_network(task:parameters.one_of('binary', 'type','odm'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops','heatmap_crops')):
     #nice -19 python3 main.py train-top-network binary vgg16 region_crops
     """
     Train the top dense layer of an extended network.
@@ -121,7 +131,7 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
     data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
     """
 
-    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion, TransferLearningSeaLionHeatmap
     
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
@@ -129,16 +139,19 @@ def train_top_network(task:parameters.one_of('binary', 'type'), network:paramete
         input_shape = (197,197,3)
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
+    elif data_type == 'heatmap_crops':
+        input_shape = (224,224,3)
 
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
         tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64, tensor_board = True)
-
-    tl.build(network.lower(), input_shape = input_shape, summary = False)
+    elif task == 'odm':
+        tl = TransferLearningSeaLionHeatmap(data_type = data_type, input_shape = input_shape, prediction_class_type = task, mini_batch_size=64, tensor_board = True, class_balancing = False)
+    tl.build(network.lower(), input_shape = input_shape)
     tl.train_top(epochs = 200)
 
-def fine_tune_network(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
+def fine_tune_network(task:parameters.one_of('binary', 'type','odm'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
     """
     Fine-tune a trained extended network. To do this, first the top
     of the extended network must have been trained.
@@ -150,7 +163,7 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
     data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
     """
 
-    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion, TransferLearningSeaLionHeatmap
 
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
@@ -163,8 +176,10 @@ def fine_tune_network(task:parameters.one_of('binary', 'type'), network:paramete
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
         tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
+    elif task == 'odm':
+        tl = TransferLearningSeaLionHeatmap(data_type = data_type, input_shape = input_shape, prediction_class_type = task, mini_batch_size=64, tensor_board = True, class_balancing = False)
 
-    tl.build(network.lower(), input_shape = input_shape, summary = False)
+    tl.build(network.lower(), input_shape = input_shape)
 
     tl.fine_tune_extended(
         epochs = 200,
@@ -183,7 +198,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
     data_type: which data to use as training/validation set ("original", "sealion_crops", "region_crops")
     """
 
-    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion
+    from network import TransferLearning, TransferLearningSeaLionOrNoSeaLion, TransferLearningSeaLionHeatmap
 
     if data_type == 'original':
         input_shape = settings.TRANSFORMATION_RESIZE_TO
@@ -191,13 +206,17 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
         input_shape = (197,197,3)
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
+    elif data_type == 'heatmap_crops':
+        input_shape = (224,224,3)
     
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)
     elif task == 'binary':
         tl = TransferLearningSeaLionOrNoSeaLion(data_type = data_type, input_shape = input_shape, prediction_class_type = "single", mini_batch_size=64)
+    elif task == 'odm':
+        tl = TransferLearningSeaLionHeatmap(data_type = data_type, input_shape = input_shape, prediction_class_type = task, mini_batch_size=64, tensor_board = True, class_balancing = False)
 
-    tl.build(network.lower(), input_shape = input_shape, summary = False)
+    tl.build(network.lower(), input_shape = input_shape)
 
     tl.fine_tune_extended(
         epochs = 200,
@@ -208,6 +227,7 @@ if __name__ == '__main__':
     run(test_iterators,
         generate_region_crops,
         generate_individual_crops,
+        generate_heatmap_crops,
         generate_overlap_masks,
         generate_heatmaps,
         generate_features,

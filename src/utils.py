@@ -19,6 +19,22 @@ def remove_key_from_dict(dict, *keys):
             del d[key]
     return d
 
+def get_gaussian_mark(sigma):
+    """
+    Returns a numpy 2D with shape (60, 60) with a gaussian kernel normalized
+    """
+    import numpy as np
+    size_aux = 200.
+    radius = 100
+    x = np.linspace(-10, 10, size_aux)
+    y = np.linspace(-10, 10, size_aux)
+    x, y = np.meshgrid(x, y)
+    z = (1/(2*np.pi*sigma**2) * np.exp(-(x**2/(2*sigma**2)
+         + y**2/(2*sigma**2))))
+    mark = z[round(size_aux/2-radius):round(size_aux/2+radius),round(size_aux/2-radius):round(size_aux/2+radius)]
+    mark /= mark.max()
+    return mark
+
 def get_file_name_part(full_path):
     """
     Get the name of the file (without extension) given by the specified full path.

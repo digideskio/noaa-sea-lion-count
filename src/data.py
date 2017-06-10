@@ -127,6 +127,75 @@ class Loader:
     def get_train_original_mismatched(self):
         return self.train_original_mismatched
         
+    def _load_heatmap_crop_images(self):
+        import cropping
+        """
+        Loads the heatmap crops and generates the object densitiy maps (odm)
+        """
+        odm_original_size = 400
+        odm_target_size = 80
+        skip_pups = True
+        i = 0
+        #Build the type of marks for each type of sealion
+        marks = {
+            'adult_males':    utils.get_gaussian_mark(3.),
+            'subadult_males': utils.get_gaussian_mark(3.),
+            'juveniles':      utils.get_gaussian_mark(2.5),
+            'pups':           utils.get_gaussian_mark(0.7),
+            'adult_females':  utils.get_gaussian_mark(2.5)
+        }
+        images = []
+        filepaths = glob.glob(os.path.join(settings.TRAIN_HEATMAP_DIR,'*.jpg'))
+        if 0:
+            #for debug
+            filepaths = filepaths[:5000]
+        total = len(filepaths)
+        logger.info("Generating object density maps of size "+str(odm_target_size)+" for "+str(total)+" crops...")
+        logger.warning("Skip_pups set to "+str(skip_pups))
+        #Iterate over all the crops
+        for filepath in filepaths:
+            meta = {}
+            meta['filepath'] = filepath
+            meta['filename'] = utils.get_file_name_part(meta['filepath'])
+            meta['count'] = int(meta['filename'].split('clions')[0])
+            meta['coordinates'] = meta['filename'].split('_')[1][2:]
+            meta['id'] = meta['filename'].split('in')[1].split('_')[0]
+            if meta['count'] == 0 and random.choice([0,0,1,1,1]):
+                #We skip 60% of the negatives
+                continue
+            #Initialize the object density map matrix
+            odm = np.zeros((odm_original_size,odm_original_size))
+            #Fill the odm with marks where the sealions are
+            for sealion in self.train_original_coordinates[meta['id']]:
+                if sealion['category'] == 'pups' and skip_pups:
+                    continue
+                sealion['row'] = float(sealion['y_coord'])
+                sealion['column'] = float(sealion['x_coord'])
+                crop_ix = {
+                    'row': float(meta['coordinates'].split('-')[1]),
+                    'column': float(meta['coordinates'].split('-')[0])
+                }
+                if cropping.RegionCropper.is_inside(None, sealion, crop_ix, odm_original_size):
+                    sealion['column'] = sealion['column'] - crop_ix['column']
+                    sealion['row'] = sealion['row'] - crop_ix['row']
+
+                    row = int(sealion['row'])
+                    column = int(sealion['column'])
+                    mark = marks[sealion['category']]
+                    radius = round(mark.shape[0]/2.)
+                    effective_mark = mark[max(0,radius-row):radius + odm_original_size - row, max(0,radius-column):radius + odm_original_size - column]
+                    odm[max(0,row-radius):row+radius,max(0,column-radius):column+radius] += effective_mark
+            #Resize to match the desired input shape of the network
+            odm = scipy.misc.imresize(odm,(odm_target_size,odm_target_size))
+            #Add one dimension for the single channel
+            odm = np.expand_dims(odm, axis = 2)
+            images.append({'x': (lambda filepath: lambda: self.load(filepath))(meta['filepath']),
+               'm': meta,
+               'y': odm})
+            if i%1000==0:
+                logger.info(str(100*i/total)[:5]+str("% completed"))
+        return images
+
     def _load_region_crop_images(self):
         images = []
         crops_dir = settings.REGION_CROPS_DIR
@@ -197,14 +266,17 @@ class Loader:
         Load precropped data
         """
         
-        assert data_type in ['sea_lion_crops', 'region_crops']
+        assert data_type in ['sea_lion_crops', 'region_crops','heatmap_crops']
         if data_type == 'region_crops':
             logger.debug('Loading region crop images')
             images = self._load_region_crop_images()
-        else:
+        elif data_type == 'sea_lion_crops':
             logger.debug('Loading sea lion crop images')
             images = self._load_sea_lion_crop_images()
-        
+        else:
+            logger.debug('Loading heatmap crop images')
+            images = self._load_heatmap_crop_images()
+            
         logger.debug('Loaded %s images' % len(images))
         return images
         
@@ -407,10 +479,15 @@ class DataIterator(Iterator):
 
             if 'y' in d:
                 if batch_y is None:
-                    batch_y = np.zeros(current_batch_size)
-
+                    #Check what kind of Y are we generating
+                    if type(d['y']) == np.ndarray and len(d['y'].shape) == 3:
+                        #Generating heatmaps
+                        batch_y = np.zeros((current_batch_size, d['y'].shape[0], d['y'].shape[1], 1))
+                    else:
+                        #Not generating heatmaps
+                        batch_y = np.zeros(current_batch_size)
                 batch_y[i] = self.class_transformation(d['y'])
-        batch_x = preprocess_input(batch_x)
+        #batch_x = preprocess_input(batch_x)
         if batch_y is not None:
             return batch_x, batch_y
         else:
@@ -466,6 +543,36 @@ class LoadTransformer(Transformer):
     """
     def _transform(self, data):
         data['x'] = data['x']()
+        return data
+
+class SyncedAugmentationTransformer(Transformer):
+    """
+    Data augmentor augmentation used for training on heatmaps.
+    This is class is needed because in heatmap training the augmentations
+    on X needs to be done on Y as well, in a synchronous manner
+    """
+    def __init__(self, store_original = False, *args, **kwargs):
+        super(SyncedAugmentationTransformer, self).__init__(*args, **kwargs)
+
+        self.store_original = store_original
+        
+    def random_synced_flip(self, data):  
+        flipud = random.choice([True, False])
+        fliplr = random.choice([True, False])
+        if flipud:
+            data['x'] = np.flipud(data['x'])
+            data['y'] = np.flipud(data['y'])
+        if fliplr:
+            data['x'] = np.fliplr(data['x'])
+            data['y'] = np.fliplr(data['y'])
+        return data
+    
+    def _transform(self, data):
+        if self.store_original: 
+            data['m']['orig_x'] = data['x']
+            data['m']['orig_y'] = data['y']
+        
+        data = self.random_synced_flip(data)
         return data
 
 class AugmentationTransformer(Transformer):
