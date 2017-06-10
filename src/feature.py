@@ -8,9 +8,9 @@ import settings
 import vigra
 
 DEFAULT_SCALES = [0.3, 0.7, 1.0, 1.6, 3.5, 5.0, 10.0] # in pixels
-DEFAULT_NUM_NEGATIVE_CROPS = 30
+DEFAULT_NUM_NEGATIVE_CROPS = 0#30
 DEFAULT_SEA_LION_SIZE = 150
-DEFAULT_WINDOW_SLIDE = 10
+DEFAULT_WINDOW_SLIDE = 15
 DEFAULT_CROP_REGION_SIZE = 400
 DEFAULT_MAX_POS_OVERLAP = 0.5
 
@@ -92,19 +92,19 @@ def sliding_window_crop_generation(sea_lion_coordinates, image_size, ignore_pups
     bases_x = range(0, imwidth  - crop_size, window_slide)
     bases_y = range(0, imheight - crop_size, window_slide)
     
-    dot_within_region = lambda dot, dot_size, region_bound, region_size: (dot > region_bound + dot_size/2) and (dot < region_bound + region_size - dot_size/2)
-    coord_in_bbox = lambda coord, base_pos: dot_within_region(coord[0], sea_lion_size, base_pos[0], crop_size) and dot_within_region(coord[1], sea_lion_size, base_pos[1], crop_size)
+    dot_within_region = lambda dot, region_bound, region_size: dot > region_bound and dot < region_bound + region_size # dot is in the centre, so if the centre is in this region, at least half the sea lion is in as well
+    coord_in_bbox = lambda coord, base_pos: dot_within_region(coord[0], base_pos[0], crop_size) and dot_within_region(coord[1], base_pos[1], crop_size)
     
     # Generate negative crops
     crops = []
     while len(crops) < num_negative_crops:
         crop_coord = (random.randrange(imwidth  - crop_size), random.randrange(imheight - crop_size))
         
-        if any(coord_in_bbox(coord, crop_coord) for coord, category in sea_lion_coordinates): # ensure negative
+        if not any(coord_in_bbox(coord, crop_coord) for coord, category in sea_lion_coordinates): # ensure negative
             crops.append(crop_coord)
     
     # Construct positive/negative matrix
-    pos_neg_matrix = np.zeros((len(bases_x), len(bases_y)), dtype=np.bool)
+    pos_neg_matrix = np.empty((len(bases_x), len(bases_y)), dtype=np.bool)
     for i, base_x in enumerate(bases_x):
         for j, base_y in enumerate(bases_y):
             if any(coord_in_bbox(coord, (base_x, base_y)) for coord, category in sea_lion_coordinates if not (ignore_pups and category == 'pups')):
