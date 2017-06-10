@@ -296,8 +296,8 @@ class Loader:
                 'meta': {
                     'image_name': <image id>,
                     'patch': { # Patch coordinates
-                        'x': <x coordinate>,
-                        'y': <y coordinate>,
+                        'x': <left x coordinate>,
+                        'y': <top y coordinate>,
                         'width': <width>,
                         'height': <height>
                     },
