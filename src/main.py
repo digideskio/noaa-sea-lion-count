@@ -104,7 +104,7 @@ def generate_heatmaps(dataset:parameters.one_of('train', 'test_st1'), network_ty
     import heatmap
     heatmap.generate_heatmaps(dataset, network_type)
 
-def generate_features(dataset:parameters.one_of('train', 'test_st1'), *, start=0, end=-1):
+def generate_features(dataset:parameters.one_of('train', 'test_st1'), *, start=0, end=-1, patches=False, ignore_pups=False):
     """
     Generate features for the given part of the data set 
     
@@ -113,9 +113,16 @@ def generate_features(dataset:parameters.one_of('train', 'test_st1'), *, start=0
     start: the first image ID to generate features of
     
     end: the last image ID to generate features of, *exclusive* (e.g., 0-1000 generates features for 0,1,...,999). -1 indicates the end of the data set
+    
+    patches: if set to true, only random patches of each image are converted to features. Can only be combined with 'train'
+    
+    ignore_pups: if set to true, pups are not counted in positive crops
     """
+    if patches and dataset != 'train':
+        raise Exception('patches can only be used with the training set')
+    
     import feature
-    feature.run_feature_generation(dataset, start, end)
+    feature.run_feature_generation(dataset, start, end, patches, ignore_pups)
 
 
 # "network": (# layers frozen in finetuning, network file to continue with)
