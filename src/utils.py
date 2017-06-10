@@ -23,8 +23,9 @@ def get_gaussian_mark(sigma):
     """
     Returns a numpy 2D with shape (60, 60) with a gaussian kernel normalized
     """
-    size_aux = 100.
-    radius = 30
+    import numpy as np
+    size_aux = 200.
+    radius = 100
     x = np.linspace(-10, 10, size_aux)
     y = np.linspace(-10, 10, size_aux)
     x, y = np.meshgrid(x, y)

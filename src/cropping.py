@@ -45,6 +45,7 @@ class RegionCropper:
         self.current_image_id = None
         self.current_image_size = {'x': None, 'y': None}
         self.current_image = None
+        self.current_image_dotted = None
         
         self.candidate_matrix = None
         self.candidate_current_ix = {'row': 0, 'column': 0}
@@ -81,13 +82,15 @@ class RegionCropper:
                 count += 1
         return count 
     
-    def is_inside(self, sealion, crop_ix):
+    def is_inside(self, sealion, crop_ix, crop_size = None):
         """
         Returns true if the sea lion coordinate xy_sealion is inside the crop defined by
         xy_crop and self.crop_size
         """
-        is_in_x_axis = crop_ix['column'] < sealion['column'] < crop_ix['column'] + self.crop_size
-        is_in_y_axis = crop_ix['row'] < sealion['row'] < crop_ix['row'] + self.crop_size
+        if not crop_size:
+            crop_size = self.crop_size
+        is_in_x_axis = crop_ix['column'] < sealion['column'] < crop_ix['column'] + crop_size
+        is_in_y_axis = crop_ix['row'] < sealion['row'] < crop_ix['row'] + crop_size
         return is_in_x_axis and is_in_y_axis
     
     def is_positive(self, crop_ix):
@@ -113,7 +116,7 @@ class RegionCropper:
         plt.title(str(self.candidate_matrix.sum())+' candidates left')
         plt.show()
         
-    def crop_from_current_image(self, crop_ix):    
+    def crop_from_current_image(self, crop_ix, dotted = False):    
         """
         Returns a square shaped crop from an image.
         
@@ -121,7 +124,12 @@ class RegionCropper:
         :param coordinates: Tuple (x, y) that contains the left upper corner coordinates of the crop
         :param crop_size: The size of the desired crop
         """
-        image_crop = self.current_image[crop_ix['row'] : crop_ix['row'] + self.crop_size, crop_ix['column'] : crop_ix['column'] + self.crop_size, :]
+        if dotted:
+            image = self.current_dotted_image
+        else:
+            image = self.current_image
+            
+        image_crop = image[crop_ix['row'] : crop_ix['row'] + self.crop_size, crop_ix['column'] : crop_ix['column'] + self.crop_size, :]
         return image_crop
     
     def plot_crop_ix(self, crop_ix):
@@ -354,7 +362,25 @@ class RegionCropper:
                 logger.info(str(len(self.negative_crops)-count)+" crops left ("+str(100*count/len(self.negative_crops))[:4]+"% completed)")
         logger.info(str(count)+"crops were saved in"+os.path.join(settings.CROPS_OUTPUT_DIR,'neg'))
             
-
+    def plot_count_crops_statistics(self, crops_folder):
+        #crops_folder = '/vol/tensusers/vgarciacazorla/MLP/noaa-sea-lion-count/output/crops/20170609T022425/heatmap'
+        counts = []
+        filepaths = glob.glob(os.path.join(crops_folder,'*.jpg'))
+        for filepath in filepaths:
+            filename = utils.get_file_name_part(filepath)
+            counts.append(int(filename.split('clions')[0]))
+        counts = sorted(counts)
+        plt.figure()
+        plt.plot(counts)
+        plt.title("Including negative crops")
+        plt.show()
+        counts = [c for c in counts if c != 0]
+        plt.figure()
+        plt.plot(counts)
+        plt.title("Excluding negative crops")
+        plt.show()
+        plt.figure()
+        
     def find_neg_crops_dataset(self, wanted_crops, max_sealions_neg):
         """
         Find and writes to disk negative herd crops. Each crop is selected by first randomly
@@ -419,7 +445,7 @@ class RegionCropper:
     def find_all_crops_current_image(self):
         """
         Finds all crops in the current image using a sliding window approach and
-        the overlapping criteria
+        the overlapping criteria 
         """
         sliding_finished = False
         try:
@@ -428,7 +454,8 @@ class RegionCropper:
             logger.info(self.current_image_id+" has not sealions")
             sliding_finished = True
         while not sliding_finished:
-            image_crop = self.crop_from_current_image(self.window_coords)
+            image_crop = self.crop_from_current_image(self.window_coords, dotted = False)
+            image_dotted_crop = self.crop_from_current_image(self.window_coords, dotted = True)
             meta = {
                 'count': self.count_sealions_in_crop(self.window_coords, skip_pups = False),
                 'type': 'heatmap',
@@ -437,7 +464,10 @@ class RegionCropper:
                 'id': self.current_image_id,
                 'crop_size': self.crop_size
             }
-            self.save_crop(image_crop, meta)
+            if self.get_blacked_out_perc(image_dotted_crop) > 0.1:
+                logger.info("Blackout crop ignored: "+str(meta))
+            else:
+                self.save_crop(image_crop, meta)
             sliding_finished = self.slide_window()   
         return
 
@@ -448,11 +478,12 @@ class RegionCropper:
         if not os.path.exists(os.path.join(settings.CROPS_OUTPUT_DIR,'heatmap')):
             os.makedirs(os.path.join(settings.CROPS_OUTPUT_DIR,'heatmap'))  
         for image_id in self.loader.train_original_counts:
-            self.current_image_id = image_id#'820'    
-            if self.current_image_id in self.loader.train_original_mismatched:
+            if image_id in self.loader.train_original_mismatched:
                 # Skip images marked as mismatched
                 continue
+            self.current_image_id = image_id#'820'    
             self.current_image = self.loader.load(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, self.current_image_id+'.jpg'))
+            self.current_dotted_image = self.loader.load(os.path.join(settings.TRAIN_DOTTED_IMAGES_DIR,self.current_image_id+'.jpg'))
             self.eval_current_image_size()
             self.init_candidate_matrix()
             logger.info('Cropping from '+self.current_image_id+'.jpg')

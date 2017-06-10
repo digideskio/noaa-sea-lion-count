@@ -6,11 +6,6 @@ import abc
 import data
 import functools
 import keras
-from keras.applications import ResNet50
-from keras.applications import InceptionV3
-from keras.applications import Xception # TensorFlow ONLY
-from keras.applications import VGG16
-from keras.applications import VGG19
 import metrics
 import numpy as np
 import math
@@ -20,11 +15,11 @@ import skimage.transform
 from time import strftime
 
 PRETRAINED_MODELS = {
-    "vgg16":     VGG16,
-    "vgg19":     VGG19,
-    "inception": InceptionV3,
-    "xception":  Xception,
-    "resnet":    ResNet50
+    "vgg16":     keras.applications.VGG16,
+    "vgg19":     keras.applications.VGG19,
+    "inception": keras.applications.InceptionV3,
+    "xception":  keras.applications.Xception, # TensorFlow ONLY
+    "resnet":    keras.applications.ResNet50
 }
 
 class Learning:
@@ -39,6 +34,7 @@ class Learning:
         self.mini_batch_size = mini_batch_size
         self.tensor_board = tensor_board
         self.validate = validate
+        self.data_type = data_type
 
         settings.logger.info("Starting...")
         loader = data.Loader()
@@ -48,11 +44,11 @@ class Learning:
             train_data = loader.load_original_images(dataset = 'train')
         if data_type == 'original_test':
             train_data = loader.load_original_images(dataset = 'test_st1')
-        elif data_type == 'sea_lion_crops':
+        else:
             train_data = loader.load_crop_images(data_type = data_type)
-        elif data_type == 'region_crops':
-            train_data = loader.load_crop_images(data_type = data_type)
-        
+            
+        if data_type == 'heatmap_crops' and class_balancing:
+            settings.logger.error('Class balancing can\'t be activated while data_type='+data_type)
         
         if validate:
             train_val_split = loader.train_val_split(train_data)
@@ -68,10 +64,16 @@ class Learning:
         if self.input_shape == (224,224,3):
             #If input shape is (224, 224, 3) there is no need to use ResizeTransformer()
             settings.logger.info("Resizing images deactivated")
-            transformer = data.LoadTransformer(data.AugmentationTransformer())
+            if self.data_type == 'heatmap_crops':
+                transformer = data.LoadTransformer(data.SyncedAugmentationTransformer())
+            else:
+                transformer = data.LoadTransformer(data.AugmentationTransformer())
         else:
             settings.logger.info("Resizing images activated")
-            transformer = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+            if self.data_type == 'heatmap_crops':
+                transformer = data.LoadTransformer(data.SyncedAugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+            else:
+                transformer = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
         return transformer
     
     def data_class_transform(self):
@@ -184,7 +186,7 @@ class TransferLearning(Learning):
         Freeze all the pretrained layers. Note: a "pretrained layer" is named as such
         even after fine-tunning it
         '''
-        print('Freezing all pretrained layers...')
+        settings.logger.info('Freezing all pretrained layers...')
         for layer in self.base_model.layers:
             layer.trainable = False
             
@@ -201,7 +203,7 @@ class TransferLearning(Learning):
         # This is the model we will train:
         self.model = keras.models.Model(input=self.base_model.input, output=predictions)
 
-    def build(self, arch_name, input_shape = None, summary = False):
+    def build(self, arch_name, input_shape = None):
         """
         Build an extended model. A base model is first loaded disregarding its last layers and afterwards
         some new layers are stacked on top so the resulting model would be applicable to the
@@ -285,6 +287,9 @@ class TransferLearning(Learning):
         elif self.prediction_class_type == "multi":
             loss = "categorical_crossentropy"
             metrics_ = ['accuracy']
+        elif self.prediction_class_type == 'odm':
+            loss = 'mean_squared_error'
+            metrics_ = ['accuracy']
 
         self.model.compile(
                 optimizer = 'adam',
@@ -296,6 +301,42 @@ class TransferLearning(Learning):
         # Train
         self.train(epochs)
 
+class TransferLearningSeaLionHeatmap(TransferLearning):
+    '''
+    This class should be used for training on heatmaps.    
+    '''
+
+    def __init__(self, *args, **kwargs):
+        """
+        TransferLearningSeaLionHeatmap initialization.
+        """
+        super().__init__(*args, **kwargs)
+
+
+    def extend(self):
+        """
+        Extend the model by stacking new (dense) layers on top of the network
+        """
+        if self.arch_name != 'xception':
+            raise Exception("TransferLearningSeaLionHeatmap is only available with the Xception architecture, not "+self.arch_name)
+        
+        x = self.base_model.output
+        x = keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        x = keras.layers.UpSampling2D((3, 3))(x)
+        #x = Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+        #x = UpSampling2D((3, 3))(x)
+        x = keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+        x = keras.layers.UpSampling2D((2, 2))(x)
+        x = keras.layers.Conv2D(16, (3, 3), activation='relu')(x)
+        x = keras.layers.UpSampling2D((2, 2))(x)
+        #The output shape of the predictions layer must match the shape of the obm (100x100x1, 80x80x1...)
+        predictions = keras.layers.Conv2D(filters = 1,
+                                         kernel_size = (3, 3),
+                                         activation='sigmoid',
+                                         padding='same')(x)
+        self.model = keras.models.Model(input=self.base_model.input, output=predictions)
+        settings.logger.info("Output shape of last layer is "+str(self.model.layers[-1].output_shape))
+        #print(self.model.summary())
 class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
     '''
     This class should be used for "Sea Lion or no Sea Lion" network and
@@ -352,8 +393,8 @@ class LearningFullyConvolutional(TransferLearning):
         else:
             last_layer = self.model.layers[-2]
 
-        print("Loaded weight shape:", w.shape)
-        print("Last conv layer weights shape:", last_layer.get_weights()[0].shape)
+        settings.logger.info("Loaded weight shape:", w.shape)
+        settings.logger.info("Last conv layer weights shape:", last_layer.get_weights()[0].shape)
 
         # Set weights of fullyconv layer:
         w_reshaped = w.reshape((1, 1, 2048, num_classes))
@@ -396,7 +437,7 @@ class LearningFullyConvolutional(TransferLearning):
         from keras.applications.imagenet_utils import preprocess_input
 
         img_raw = img
-        print("img shape before resizing: %s" % (img_raw.shape,))
+        settings.logger.info("img shape before resizing: %s" % (img_raw.shape,))
 
         # Resize
         img = scipy.misc.imresize(img_raw, size=img_size).astype("float32")
@@ -407,7 +448,7 @@ class LearningFullyConvolutional(TransferLearning):
         # Preprocess for use in imagenet        
         img = preprocess_input(img)
 
-        print("img batch size shape before forward pass:", img.shape)
+        settings.logger.info("img batch size shape before forward pass:", img.shape)
         z = self.model.predict(img)
 
         return z
@@ -416,7 +457,7 @@ class LearningFullyConvolutional(TransferLearning):
         probas = self.forward_pass_resize(img, img_size)
 
         x = probas[0, :, :, np.array(axes)].sum(axis=0)
-        print("size of heatmap: " + str(x.shape))
+        settings.logger.info("size of heatmap: " + str(x.shape))
         return x
 
     def build_multi_scale_heatmap(self, img, scales=[1], axes = [0]): # scales=[1.5,1,0.7]
