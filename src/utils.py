@@ -84,7 +84,7 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
     :param coordinates: A list of sea lion coordinate dicts with keys {'x_coord', 'y_coord', 'category'}
     :param sigma: The (default) sigma of the densities.
     :param sigma_per_class: A dictionary optionally containing sigmas per class (e.g., a juvenile could
-                            have a lower sigma than an adult male).
+                            have a lower sigma than an adult male). If None, the coordinate is ignored.
     :return: A map with shape (height, width) of bivariate normal densities corresponding to sea lion
              coordinates.
     """
@@ -94,6 +94,9 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
 
     for coordinate in coordinates:
         sigma_ = sigma_per_class[coordinate['category']] if coordinate['category'] in sigma_per_class else sigma
+        if sigma_ is None:
+            continue
+
         pdf = get_multivariate_normal_pdf([[0, width-1], [0, height-1]], dx = 1, mean = [coordinate['x_coord'], coordinate['y_coord']], cov = sigma_)
         map += pdf
 
