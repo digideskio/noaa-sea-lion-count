@@ -35,7 +35,7 @@ def get_gaussian_mark(sigma):
     mark /= mark.max()
     return mark
 
-def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = [1, 1], mean = 0, cov = 1):
+def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = 1, mean = 0, cov = 1):
     """
     Create a multivariate normal density.
 
@@ -53,11 +53,14 @@ def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = [1, 1], mean = 0, c
 
     d = len(x)
 
-    if (not isinstance(cov, collections.Sequence)) and d > 1:
+    if (not isinstance(dx, collections.Sequence)):
+        dx = np.ones(d) * dx
+
+    if (not isinstance(cov, collections.Sequence)):
         cov = np.eye(d) * cov
 
-    if (not isinstance(mean, collections.Sequence)) and d > 1:
-        mean = np.ones(1) * mean
+    if (not isinstance(mean, collections.Sequence)):
+        mean = np.ones(d) * mean
 
     var = multivariate_normal(mean=mean, cov=cov)
 
