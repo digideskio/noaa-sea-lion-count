@@ -35,6 +35,25 @@ def get_gaussian_mark(sigma):
     mark /= mark.max()
     return mark
 
+def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], output_resolution = [30, 30], cov = [[1.0, 0], [0, 1.0]]):
+    import numpy as np
+    from scipy.stats import multivariate_normal
+
+    mean = [0] * len(cov)
+
+    var = multivariate_normal(mean=mean, cov=cov)
+
+    axes = []
+    for x_, diameter in zip(x, output_resolution):
+        axes.append(np.linspace(x_[0], x_[1], diameter))
+
+    mesh = np.meshgrid(*axes)
+    pos = np.empty(mesh[0].shape + (len(mesh),))
+    for i in range(len(mesh)):
+        pos[:, :, i] = mesh[i] 
+
+    return multivariate_normal.pdf(pos, mean, cov)
+
 def get_file_name_part(full_path):
     """
     Get the name of the file (without extension) given by the specified full path.

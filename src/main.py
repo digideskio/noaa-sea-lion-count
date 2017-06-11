@@ -34,6 +34,16 @@ def test_density_map_feature_loading():
     
     for img in density_data:
         logger.info('Image %s: %s feature(s)' % (img['meta']['image_name'], len(img['features'])))
+
+def test_pdf():
+    import utils
+    import matplotlib.pyplot as plt
+
+    pdf = utils.get_multivariate_normal_pdf(output_resolution = [512, 512], cov = [[2.5, 0], [-0.9, 5.0]])
+    
+    plt.imshow(pdf)
+    plt.show()
+    pass
         
 def generate_heatmap_crops(max_overlap_perc:float):
     crop_size = 400
@@ -235,6 +245,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:par
 if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
+        test_pdf,
         generate_region_crops,
         generate_individual_crops,
         generate_heatmap_crops,
