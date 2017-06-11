@@ -36,6 +36,15 @@ def get_gaussian_mark(sigma):
     return mark
 
 def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], output_resolution = [30, 30], cov = [[1.0, 0], [0, 1.0]]):
+    """
+    Create a multivariate normal density.
+
+    :param x: The min and max x-values to get the density values for.
+    :param output_resolution: The number of output points the axis should have.
+    :param cov: The covariance matrix.
+    :return: The multivariate normal density with shape <output_resolution>
+             on domain <x> with mean 0 and covariance matrix <cov>.
+    """
     import numpy as np
     from scipy.stats import multivariate_normal
 
