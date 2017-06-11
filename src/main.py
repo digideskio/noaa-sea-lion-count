@@ -27,6 +27,9 @@ def test_iterators():
         print('Batch size: {0}'.format(len(batch)))
 
 def test_density_map_feature_loading():
+    import utils
+    import matplotlib.pyplot as plt
+
     logger.info('Starting...')
 
     loader = data.Loader()
@@ -34,6 +37,24 @@ def test_density_map_feature_loading():
     
     for img in density_data:
         logger.info('Image %s: %s feature(s)' % (img['meta']['image_name'], len(img['features'])))
+        coords = img['meta']['coordinates']
+
+        map = utils.sea_lion_density_map(img['meta']['patch']['width'], img['meta']['patch']['height'], coords, sigma = 35)
+
+        blurred = img['features']['gs']['0.3']()
+
+        plt.subplot(1,3,1)
+        plt.imshow(blurred.astype("uint8"))
+        plt.axis('off')
+        plt.subplot(1,3,2)
+        plt.imshow(map, interpolation='nearest', cmap='viridis')
+        plt.axis('off')
+        plt.subplot(1,3,3)
+        plt.imshow(blurred.astype("uint8"))
+        plt.imshow(map, interpolation='nearest', cmap='viridis', alpha=0.5)
+        plt.axis('off')
+        plt.show()
+        pass
 
 def test_pdf():
     import utils
