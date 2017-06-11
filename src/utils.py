@@ -48,14 +48,15 @@ def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = [1, 1], mean = 0, c
              on domain <x> with mean 0 and covariance matrix <cov>.
     """
     import numpy as np
+    import collections
     from scipy.stats import multivariate_normal
 
     d = len(x)
 
-    if len(cov) == 1 and d > 1:
+    if (not isinstance(cov, collections.Sequence)) and d > 1:
         cov = np.eye(d) * cov
 
-    if len(mean) == 1 and d > 1:
+    if (not isinstance(mean, collections.Sequence)) and d > 1:
         mean = np.ones(1) * mean
 
     var = multivariate_normal(mean=mean, cov=cov)
