@@ -38,9 +38,12 @@ def test_density_map_feature_loading():
 def test_pdf():
     import utils
     import matplotlib.pyplot as plt
+    import functools
 
-    pdf = utils.get_multivariate_normal_pdf(output_resolution = [512, 512], cov = [[2.5, 0], [-0.9, 5.0]])
-    
+    dx = [0.01, 0.01]
+    pdf = utils.get_multivariate_normal_pdf(dx = dx, cov = [[2.5, 0], [-0.9, 5.0]])
+    logger.info("The density sums to %s." % (sum(sum(pdf)) * functools.reduce(lambda x, y: x * y, dx, 1.0)))
+
     plt.imshow(pdf)
     plt.show()
     pass

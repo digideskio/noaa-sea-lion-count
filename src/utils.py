@@ -35,12 +35,12 @@ def get_gaussian_mark(sigma):
     mark /= mark.max()
     return mark
 
-def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], output_resolution = [30, 30], cov = [[1.0, 0], [0, 1.0]]):
+def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], dx = [1, 1], cov = [[1.0, 0], [0, 1.0]]):
     """
     Create a multivariate normal density.
 
     :param x: The min and max x-values to get the density values for.
-    :param output_resolution: The number of output points the axis should have.
+    :param dx: The step size for each axis.
     :param cov: The covariance matrix.
     :return: The multivariate normal density with shape <output_resolution>
              on domain <x> with mean 0 and covariance matrix <cov>.
@@ -53,8 +53,8 @@ def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], output_resolution = [3
     var = multivariate_normal(mean=mean, cov=cov)
 
     axes = []
-    for x_, diameter in zip(x, output_resolution):
-        axes.append(np.linspace(x_[0], x_[1], diameter))
+    for x_, dx_ in zip(x, dx):
+        axes.append(np.arange(x_[0], x_[1] + dx_, dx_))
 
     mesh = np.meshgrid(*axes)
     pos = np.empty(mesh[0].shape + (len(mesh),))
