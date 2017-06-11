@@ -75,6 +75,17 @@ def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = 1, mean = 0, cov = 
 
     return multivariate_normal.pdf(pos, mean, cov)
 
+def sea_lion_density_map(width, height, coordinates, sigma = 2.5):
+    import numpy as np
+
+    map = np.zeros((height, width))
+
+    for coordinate in coordinates:
+        pdf = get_multivariate_normal_pdf([[0, width-1], [0, height-1]], dx = 1, mean = [coordinate['x_coord'], coordinate['y_coord']], cov = sigma)
+        map += pdf
+
+    return map
+
 def get_file_name_part(full_path):
     """
     Get the name of the file (without extension) given by the specified full path.
