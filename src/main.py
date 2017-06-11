@@ -41,7 +41,7 @@ def test_pdf():
     import functools
 
     dx = [0.01, 0.01]
-    pdf = utils.get_multivariate_normal_pdf(dx = dx, cov = [[2.5, 0], [-0.9, 5.0]])
+    pdf = utils.get_multivariate_normal_pdf(x = [[-10, 10], [-10, 10]], dx = dx, mean = [-3, -4], cov = [[2.5, 0], [-0.9, 5.0]])
     logger.info("The density sums to %s." % (sum(sum(pdf)) * functools.reduce(lambda x, y: x * y, dx, 1.0)))
 
     plt.imshow(pdf)

@@ -35,20 +35,28 @@ def get_gaussian_mark(sigma):
     mark /= mark.max()
     return mark
 
-def get_multivariate_normal_pdf(x = [[-5, 5], [-10, 10]], dx = [1, 1], cov = [[1.0, 0], [0, 1.0]]):
+def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = [1, 1], mean = 0, cov = 1):
     """
     Create a multivariate normal density.
 
     :param x: The min and max x-values to get the density values for.
     :param dx: The step size for each axis.
-    :param cov: The covariance matrix.
+    :param mean: The mean of the multivariate gaussian. If scalar, each dimension will
+                 be set to that scalar mean.
+    :param cov: The covariance matrix. If scalar, it will be set to I*cov
     :return: The multivariate normal density with shape <output_resolution>
              on domain <x> with mean 0 and covariance matrix <cov>.
     """
     import numpy as np
     from scipy.stats import multivariate_normal
 
-    mean = [0] * len(cov)
+    d = len(x)
+
+    if len(cov) == 1 and d > 1:
+        cov = np.eye(d) * cov
+
+    if len(mean) == 1 and d > 1:
+        mean = np.ones(1) * mean
 
     var = multivariate_normal(mean=mean, cov=cov)
 
