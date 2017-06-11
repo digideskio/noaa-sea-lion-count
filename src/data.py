@@ -347,14 +347,14 @@ class Loader:
                 # Get coordinates of sea lions in the original full-size image
                 orig_coordinates = self.train_original_coordinates[image_id] if image_id in self.train_original_coordinates else []
 
-                # Get all sea lion coordinates that are within this patch and transform coordinates to the patch coordinate base
+                # Get all sea lion coordinates that are within (or very close to) this patch and transform coordinates to the patch coordinate base
                 coordinates = []
                 for coord in orig_coordinates:
                     x = int(float(coord['x_coord']))
                     y = int(float(coord['y_coord']))
                     if (
-                            bounding_box['x'] <= x < bounding_box['x'] + bounding_box['width']
-                        and bounding_box['y'] <= y < bounding_box['y'] + bounding_box['height']):
+                            bounding_box['x'] - 150 <= x < bounding_box['x'] + bounding_box['width'] + 150
+                        and bounding_box['y'] - 150 <= y < bounding_box['y'] + bounding_box['height'] + 150):
                         coordinates.append({
                             'x_coord': x - bounding_box['x'],
                             'y_coord': y - bounding_box['y'],
