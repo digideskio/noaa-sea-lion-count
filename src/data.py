@@ -149,6 +149,7 @@ class Loader:
         if 0:
             #for debug
             filepaths = filepaths[:5000]
+            settings.logger.warning("Not using all the crops")
         total = len(filepaths)
         logger.info("Generating object density maps of size "+str(odm_target_size)+" for "+str(total)+" crops...")
         logger.warning("Skip_pups set to "+str(skip_pups))
@@ -162,6 +163,7 @@ class Loader:
             meta['id'] = meta['filename'].split('in')[1].split('_')[0]
             if meta['count'] == 0 and random.choice([0,0,1,1,1]):
                 #We skip 60% of the negatives
+                total -= 1
                 continue
             #Initialize the object density map matrix
             odm = np.zeros((odm_original_size,odm_original_size))
@@ -194,6 +196,7 @@ class Loader:
                'y': odm})
             if i%1000==0:
                 logger.info(str(100*i/total)[:5]+str("% completed"))
+            i += 1
         return images
 
     def _load_region_crop_images(self):

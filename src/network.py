@@ -96,7 +96,7 @@ class Learning:
         callbacks_list = []
         trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
         # Create weight output dir if it does not exist
-        base_name = self.arch_name + "-lay"+str(trainable_layers)
+        base_name = self.arch_name + "-lay"+str(trainable_layers)+"-"+self.data_type
 
         # Save the model with best validation accuracy during training
         
@@ -124,10 +124,12 @@ class Learning:
             callbacks_list.append(tf_logs)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 50000
+        unique_instances = 250000
         # Train
         steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
         validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        settings.logger.info("steps_per_epoch = "+str(steps_per_epoch))
+        settings.logger.info("validation_steps = "+str(validation_steps))
         self.print_layers_info()
         self.model.fit_generator(
             generator = self.iterator,
@@ -258,6 +260,9 @@ class TransferLearning(Learning):
             metrics_ = ['accuracy', metrics.precision, metrics.recall]
         elif self.prediction_class_type == "multi":
             loss = "categorical_crossentropy"
+            metrics_ = ['accuracy']
+        elif self.prediction_class_type == 'odm':
+            loss = 'mean_squared_error'
             metrics_ = ['accuracy']
 
         self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0001, momentum=0.9), loss=loss, metrics = metrics_)

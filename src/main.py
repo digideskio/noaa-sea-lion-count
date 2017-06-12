@@ -165,7 +165,7 @@ NETWORKS = {
     'vgg16':     (0,   'vgg16-lay2-ep018-tloss0.5491-vloss0.5485.hdf5'),
     'vgg19':     (17,  'insert-vgg19-network-weights-file-here.hdf5'),
     'inception': (125, 'insert-inception-network-weights-file-here.hdf5'), # no numbers for this one
-    'xception':  (125, 'xception-lay2-ep001-tloss0.9953-vloss0.8017.hdf5'),
+    'xception':  (125, 'xception-lay53-heatmap_crops-ep030-tloss647.2298-vloss636.6220.hdf5'),
     'resnet':    (75,  'resnet-lay2-ep016-tloss0.0832-vloss0.0521.hdf5')
 }
 
@@ -233,10 +233,11 @@ def fine_tune_network(task:parameters.one_of('binary', 'type','odm'), network:pa
 
     tl.fine_tune_extended(
         epochs = 200,
-        input_weights_name = NETWORKS[network.lower()][1],
+        input_weights_name = None,#NETWORKS[network.lower()][1],
         n_layers = NETWORKS[network.lower()][0])
 
-def fine_tune_network_perc(task:parameters.one_of('binary', 'type'), network:parameters.one_of(*sorted(NETWORKS.keys())), perc:float, data_type:parameters.one_of('original', 'sealion_crops', 'region_crops')):
+def fine_tune_network_perc(task:parameters.one_of('binary', 'type','odm'), network:parameters.one_of(*sorted(NETWORKS.keys())), perc:float, data_type:parameters.one_of('original', 'sealion_crops', 'region_crops','heatmap_crops')):
+    #python3 main.py fine-tune-network-perc odm xception 0.35 heatmap_crops
     """
     Fine-tune a trained extended network. To do this, first the top
     of the extended network must have been trained.
