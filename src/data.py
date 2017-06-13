@@ -148,7 +148,7 @@ class Loader:
         filepaths = glob.glob(os.path.join(settings.TRAIN_HEATMAP_DIR,'*.jpg'))
         if 0:
             #for debug
-            filepaths = filepaths[:5000]
+            filepaths = filepaths[:100000]
             settings.logger.warning("Not using all the crops")
         total = len(filepaths)
         logger.info("Generating object density maps of size "+str(odm_target_size)+" for "+str(total)+" crops...")
