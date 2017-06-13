@@ -189,8 +189,11 @@ class Loader:
                     odm[max(0,row-radius):row+radius,max(0,column-radius):column+radius] += effective_mark
             #Resize to match the desired input shape of the network
             odm = scipy.misc.imresize(odm,(odm_target_size,odm_target_size))
+            if odm.max() > 0:
+                odm = odm/odm.max()     
             #Add one dimension for the single channel
             odm = np.expand_dims(odm, axis = 2)
+            #print(odm.max(), odm.mean(),9999)
             images.append({'x': (lambda filepath: lambda: self.load(filepath))(meta['filepath']),
                'm': meta,
                'y': odm})
@@ -642,6 +645,16 @@ class ResizeTransformer(Transformer):
 
     def _transform(self, data):
         data['x'] = scipy.misc.imresize(data['x'], self.shape)
+        return data
+
+class RescaleTransformer(Transformer):
+
+    def __init__(self,  *args, **kwargs):
+        super(RescaleTransformer, self).__init__(*args, **kwargs)
+
+    def _transform(self, data):
+        if data['x'].max() > 0:
+            data['x'] = data['x'] / data['x'].max()
         return data
 
 class LoadTransformer(Transformer):
