@@ -199,7 +199,7 @@ def train_top_network(task:parameters.one_of('binary', 'type','odm'), network:pa
     elif task == 'odm':
         tl = TransferLearningSeaLionHeatmap(data_type = data_type, input_shape = input_shape, prediction_class_type = task, mini_batch_size=64, tensor_board = True, class_balancing = False)
     tl.build(network.lower(), input_shape = input_shape)
-    tl.train_top(epochs = 200)
+    tl.train_top(epochs = 400)
 
 def fine_tune_network(task:parameters.one_of('binary', 'type','odm'), network:parameters.one_of(*sorted(NETWORKS.keys())), data_type:parameters.one_of('original', 'sea_lion_crops', 'region_crops')):
     """
@@ -258,7 +258,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type','odm'), netwo
     elif data_type == 'region_crops':
         input_shape = (224,224,3)
     elif data_type == 'heatmap_crops':
-        input_shape = (224,224,3)
+        input_shape = (224, 224, 3)
     
     if task == 'type':
         tl = TransferLearning(data_type = data_type, input_shape = input_shape, prediction_class_type = "multi", mini_batch_size=16)

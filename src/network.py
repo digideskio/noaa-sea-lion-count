@@ -61,19 +61,15 @@ class Learning:
         
         
     def data_transformer(self):
-        if self.input_shape == (224,224,3):
+        if self.data_type == 'heatmap_crops':
+            transformer = data.LoadTransformer(data.SyncedAugmentationTransformer(next = data.RescaleTransformer()))
+        elif self.input_shape == (224,224,3):
             #If input shape is (224, 224, 3) there is no need to use ResizeTransformer()
             settings.logger.info("Resizing images deactivated")
-            if self.data_type == 'heatmap_crops':
-                transformer = data.LoadTransformer(data.SyncedAugmentationTransformer())
-            else:
-                transformer = data.LoadTransformer(data.AugmentationTransformer())
+            transformer = data.LoadTransformer(data.AugmentationTransformer())
         else:
             settings.logger.info("Resizing images activated")
-            if self.data_type == 'heatmap_crops':
-                transformer = data.LoadTransformer(data.SyncedAugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
-            else:
-                transformer = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
+            transformer = data.LoadTransformer(data.AugmentationTransformer(next = data.ResizeTransformer(self.input_shape)))
         return transformer
     
     def data_class_transform(self):
@@ -92,7 +88,7 @@ class Learning:
         :param mini_batch_size: size of the mini batches
         :param weights_name: name for the h5py weights file to be written in the output folder
         """
-        
+        print(999,self.input_shape)
         callbacks_list = []
         trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
         # Create weight output dir if it does not exist
@@ -126,8 +122,8 @@ class Learning:
         #TODO get unqie_instances automatically 
         unique_instances = 250000
         # Train
-        steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
-        validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        steps_per_epoch = 1#math.ceil(0.7*unique_instances/self.mini_batch_size)
+        validation_steps = 1#math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
         settings.logger.info("steps_per_epoch = "+str(steps_per_epoch))
         settings.logger.info("validation_steps = "+str(validation_steps))
         self.print_layers_info()
@@ -340,6 +336,7 @@ class TransferLearningSeaLionHeatmap(TransferLearning):
                                          activation='sigmoid',
                                          padding='same')(x)
         self.model = keras.models.Model(input=self.base_model.input, output=predictions)
+        settings.logger.info("Output shape of first layer is "+str(self.model.layers[0].output_shape))
         settings.logger.info("Output shape of last layer is "+str(self.model.layers[-1].output_shape))
         #print(self.model.summary())
 class TransferLearningSeaLionOrNoSeaLion(TransferLearning):
