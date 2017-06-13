@@ -122,8 +122,8 @@ class Learning:
         #TODO get unqie_instances automatically 
         unique_instances = 250000
         # Train
-        steps_per_epoch = 1#math.ceil(0.7*unique_instances/self.mini_batch_size)
-        validation_steps = 1#math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
+        steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
+        validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
         settings.logger.info("steps_per_epoch = "+str(steps_per_epoch))
         settings.logger.info("validation_steps = "+str(validation_steps))
         self.print_layers_info()
