@@ -88,7 +88,7 @@ class Learning:
         :param mini_batch_size: size of the mini batches
         :param weights_name: name for the h5py weights file to be written in the output folder
         """
-        print(999,self.input_shape)
+        
         callbacks_list = []
         trainable_layers = sum([int(layer.trainable) for layer in self.model.layers])
         # Create weight output dir if it does not exist
@@ -118,6 +118,9 @@ class Learning:
                 write_graph = True,
                 write_images = True)
             callbacks_list.append(tf_logs)
+        #If no improvement after 3 epochs, increase lr
+        reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3)
+        callbacks_list.append(reduce_lr)
             
         #TODO get unqie_instances automatically 
         unique_instances = 250000
