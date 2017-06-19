@@ -141,8 +141,10 @@ def run_feature_generation(dataset, start=0, end=-1, patches=False, ignore_pups=
             outdir = settings.DENSITY_MAP_FEATURE_CROPS_DIR
         else:
             outdir = settings.TRAIN_FEATURES_DIR
+        indir = settings.TRAIN_ORIGINAL_IMAGES_DIR
     elif dataset == 'test_st1':
         outdir = settings.TEST_FEATURES_DIR
+        indir = settings.TEST_ORIGINAL_IMAGES_DIR
     else:
         raise Exception('Data set not implemented: ' + dataset)
     
@@ -156,7 +158,7 @@ def run_feature_generation(dataset, start=0, end=-1, patches=False, ignore_pups=
         imageid = images[idx]['m']['filename']
         settings.logger.info('Generating crops image %d (%s.jpg)...' % (idx, imageid))
         
-        image = vigra.readImage(os.path.join(settings.TRAIN_ORIGINAL_IMAGES_DIR, imageid + '.jpg'))
+        image = vigra.readImage(os.path.join(indir, imageid + '.jpg'))
         
         if patches:
             sea_lions = [((round(float(coord['x_coord'])), round(float(coord['y_coord']))), coord['category']) for coord in images[idx]['m']['coordinates']]
