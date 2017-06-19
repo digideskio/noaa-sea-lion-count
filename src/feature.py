@@ -7,11 +7,14 @@ import scipy
 import settings
 import vigra
 
-DEFAULT_SCALES = [0.3, 0.7, 1.0, 1.6, 3.5, 5.0, 10.0] # in pixels
+#DEFAULT_SCALES = [0.3, 0.7, 1.0, 1.6, 3.5, 5.0, 10.0] # ilastik scales
+
+RESAMPLE_FACTOR = 0.5 # 0.5 = 2x downscale
+DEFAULT_SCALES = [0.7, 3.5, 7.5, 15.0] # in original image's pixels
 DEFAULT_NUM_NEGATIVE_CROPS = 30
-DEFAULT_SEA_LION_SIZE = 150
-DEFAULT_WINDOW_SLIDE = 15
-DEFAULT_CROP_REGION_SIZE = 400
+DEFAULT_SEA_LION_SIZE = 75 #150 downscaled
+DEFAULT_WINDOW_SLIDE = 8 #15 downscaled
+DEFAULT_CROP_REGION_SIZE = 200 #400 downscaled
 DEFAULT_MAX_POS_OVERLAP = 0.5
 
 
@@ -66,23 +69,23 @@ def generate_features(img, base_out_path, scales=DEFAULT_SCALES, patches=None, c
         for scale in scales:
             settings.logger.info('Generating scale = ' + ('%g' % scale) + ' features...')
             
-            out = laplacian_of_gaussian(img, scale, roi=roi)
-            out.writeImage(outpath + ('log-%g.png' % scale))
+            #out = laplacian_of_gaussian(img, scale*RESAMPLE_FACTOR, roi=roi) # superseded by DoG
+            #out.writeImage(outpath + ('log-%g.png' % scale))
             
-            out = gaussian_gradient_magnitude(img, scale, roi=roi)
-            out.writeImage(outpath + ('ggm-%g.png' % scale))
+            #out = gaussian_gradient_magnitude(img, scale*RESAMPLE_FACTOR, roi=roi) # superseded by STE1 and HoGE
+            #out.writeImage(outpath + ('ggm-%g.png' % scale))
             
-            out, out2 = gaussian_smoothing_and_difference_of_gaussians(img, scale, roi=roi)
+            out, out2 = gaussian_smoothing_and_difference_of_gaussians(img, scale*RESAMPLE_FACTOR, roi=roi)
             out.writeImage(outpath + ('gs-%g.png' % scale))
             out2.writeImage(outpath + ('dog-%g.png' % scale))
             
-            out = hessian_of_gaussian_eigenvalues(img, scale, roi=roi)
+            out = hessian_of_gaussian_eigenvalues(img, scale*RESAMPLE_FACTOR, roi=roi)
             (out[:,:,0]).writeImage(outpath + ('hoge1-%g.png' % scale))
             (out[:,:,1]).writeImage(outpath + ('hoge2-%g.png' % scale))
             
-            out = structure_tensor_eigenvalues(img, scale, roi=roi)
+            out = structure_tensor_eigenvalues(img, scale*RESAMPLE_FACTOR, roi=roi)
             (out[:,:,0]).writeImage(outpath + ('ste1-%g.png' % scale))
-            (out[:,:,1]).writeImage(outpath + ('ste2-%g.png' % scale))
+            #(out[:,:,1]).writeImage(outpath + ('ste2-%g.png' % scale)) # too sparse
 
 def sliding_window_crop_generation(sea_lion_coordinates, image_size, ignore_pups=False,
                                    num_negative_crops=DEFAULT_NUM_NEGATIVE_CROPS, crop_size=DEFAULT_CROP_REGION_SIZE,
@@ -159,9 +162,10 @@ def run_feature_generation(dataset, start=0, end=-1, patches=False, ignore_pups=
         settings.logger.info('Generating crops image %d (%s.jpg)...' % (idx, imageid))
         
         image = vigra.readImage(os.path.join(indir, imageid + '.jpg'))
+        image = vigra.sampling.resampleImage(image, factor=RESAMPLE_FACTOR)
         
         if patches:
-            sea_lions = [((round(float(coord['x_coord'])), round(float(coord['y_coord']))), coord['category']) for coord in images[idx]['m']['coordinates']]
+            sea_lions = [((round(float(coord['x_coord'])*RESAMPLE_FACTOR), round(float(coord['y_coord'])*RESAMPLE_FACTOR)), coord['category']) for coord in images[idx]['m']['coordinates']]
             crops = sliding_window_crop_generation(sea_lions, image.shape, ignore_pups)
             
             generate_features(image, os.path.join(outdir, imageid), patches=crops)
