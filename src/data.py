@@ -575,7 +575,8 @@ class DataIterator(Iterator):
 
         batch_x = None
         batch_y = None
-
+        batch_m = None
+        
         for i, j in enumerate(index_array):
             # i is the batch index (0 to batch_size)
             # j is the index of the data to put at this batch index
@@ -584,9 +585,13 @@ class DataIterator(Iterator):
                 d = self.data_transformation.apply(d)
             if batch_x is None:
                 batch_x = np.zeros(tuple([current_batch_size] + list(d['x'].shape)), dtype=K.floatx())
-                    
+            if batch_m is None:
+                batch_m = list()
+                
             batch_x[i] = d['x']
-
+            
+            if 'm' in d:
+                batch_m.append(d['m'])
             if 'y' in d:
                 if batch_y is None:
                     #Check what kind of Y are we generating
@@ -599,9 +604,11 @@ class DataIterator(Iterator):
                 batch_y[i] = self.class_transformation(d['y'])
         #batch_x = preprocess_input(batch_x)
         if batch_y is not None:
+            #For now don't return batch_m in this case
             return batch_x, batch_y
         else:
-            return batch_x
+            #Return batch_m because it is needed at test time
+            return batch_x, batch_m
 
 class Transformer(object):
     """
