@@ -589,13 +589,13 @@ class DataIterator(Iterator):
                 batch_m = list()
                 
             batch_x[i] = d['x']
-            
+
             if 'm' in d:
                 batch_m.append(d['m'])
             if 'y' in d:
                 if batch_y is None:
                     #Check what kind of Y are we generating
-                    if type(d['y']) == np.ndarray and len(d['y'].shape) == 3:
+                    if type(d['y']) == np.ndarray and len(d['y'].shape) > 1:
                         #Generating heatmaps
                         batch_y = np.zeros((current_batch_size, d['y'].shape[0], d['y'].shape[1], 1))
                     else:
@@ -670,6 +670,46 @@ class LoadTransformer(Transformer):
     """
     def _transform(self, data):
         data['x'] = data['x']()
+        return data
+
+class LoadDensityFeatureTransformer(Transformer):
+    """
+    Transformation for the initial loading of the density map feature data
+    """
+    def _transform(self, data):
+        features = []
+        features.append(data['features']['ggm']['3.5']())
+        features.append(data['features']['ggm']['5']())
+
+        shapes = list(map((lambda f: f.shape if len(f.shape) == 3 else (f.shape[0], f.shape[1], 1)), features))
+        numChannels = sum(map((lambda shape: shape[2]), shapes))
+
+        concat = np.zeros((shapes[0][0], shapes[0][1], numChannels))
+
+        channelsSeen = 0
+        for feature, shape in zip(features, shapes):
+            if len(feature.shape) <= 3:
+                feature = np.expand_dims(feature, axis=2)
+            concat[..., channelsSeen:(channelsSeen + shape[2])] = feature
+            channelsSeen += shape[2]
+
+        data['x'] = concat
+        return data
+
+class CreateDensityMapTransformer(Transformer):
+    """
+    Create the actual density map for the density map data
+    """
+    def _transform(self, data):
+        coords = data['meta']['coordinates']
+        m = utils.sea_lion_density_map(
+            data['meta']['patch']['width'],
+            data['meta']['patch']['height'],
+            data['meta']['coordinates'],
+            sigma = 35)
+
+        # Add dimension such that m is of shape (width, height, 1)
+        data['y'] = np.expand_dims(m, axis=2)
         return data
 
 class SyncedAugmentationTransformer(Transformer):

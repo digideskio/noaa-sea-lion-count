@@ -274,6 +274,12 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type','odm'), netwo
         input_weights_name = NETWORKS[network.lower()][1],
         perc = perc)
 
+def train_density_network():
+    from network import DensityLearning
+    network = DensityLearning(data_type = "density_map_feature_crops", class_balancing = False)
+    network.build()
+    network.train(epochs = 100)
+
 if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
@@ -286,4 +292,5 @@ if __name__ == '__main__':
         generate_features,
         train_top_network,
         fine_tune_network,
-        fine_tune_network_perc)
+        fine_tune_network_perc,
+        train_density_network)
