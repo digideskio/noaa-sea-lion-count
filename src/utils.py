@@ -4,6 +4,15 @@ Module containing some utilities
 
 import os
 
+def get_blacked_out_perc(crop):
+    """
+    Checks whether the crop contains blacked out regions
+    """
+    import numpy as np
+    
+    dim1, dim2, _ = crop.shape
+    return np.sum(np.sum(crop, 2) == 0) / (dim1*dim2)
+
 def remove_key_from_dict(dict, *keys):
     """
     Remove keys from a dictionary, and return the new dictionary.
