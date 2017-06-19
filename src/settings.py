@@ -51,6 +51,9 @@ CROPS_OUTPUT_DIR = os.path.join(OUTPUT_DIR,"crops", strftime("%Y%m%dT%H%M%S"))
 TENSORBOARD_LOGS_DIR = os.path.join(OUTPUT_DIR, 'tb_logs')
 SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 
+OBMS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'obms')
+
+
 # Data augmentation settings
 TRANSFORMATION_RESIZE_TO = (2000,2000,3)
 AUGMENTATION_ROTATION_RANGE = 0,
