@@ -607,8 +607,8 @@ class DataIterator(Iterator):
             #For now don't return batch_m in this case
             return batch_x, batch_y
         else:
-            #Return batch_m because it is needed at test time
-            return batch_x, batch_m
+            
+            return batch_x
 
 class Transformer(object):
     """
