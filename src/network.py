@@ -42,8 +42,10 @@ class Learning:
         
         if data_type == 'original_train':
             train_data = loader.load_original_images(dataset = 'train')
-        if data_type == 'original_test':
+        elif data_type == 'original_test':
             train_data = loader.load_original_images(dataset = 'test_st1')
+        elif data_type == "density_map_feature_crops":
+            train_data = loader.load_density_map_feature_crops()
         else:
             train_data = loader.load_crop_images(data_type = data_type)
             
@@ -140,7 +142,42 @@ class Learning:
             callbacks = callbacks_list)
 
 
-        
+class DensityLearning(Learning):
+    def __init__(self, *args, **kwargs):
+        """
+        DensityLearning initialization.
+        """
+        super().__init__(*args, **kwargs)
+
+        self.base_model = None
+        self.model = None
+        self.arch_name = "FlatFullyConvDensityLearner"
+
+    def build(self):
+        self.model = keras.models.Sequential()
+        self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 2), kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(15, kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(10, kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(5, kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(1, kernel_size=4, padding="same", activation='relu'))
+
+        loss_ = "mean_absolute_error"
+        metrics_ = ["mae"]
+
+        self.model.compile(optimizer=keras.optimizers.SGD(lr=0.001, momentum=0.9), loss=loss_, metrics = metrics_)
+
+    def print_layers_info(self):
+        """
+        Prints information about the model
+        """
+        print("%s layers" % len(self.model.layers))
+
+    def data_class_transform(self):
+        return lambda x: x
+
+    def data_transformer(self):
+        transformer = data.LoadDensityFeatureTransformer(data.CreateDensityMapTransformer())
+        return transformer
 
 class TransferLearning(Learning):
 	
