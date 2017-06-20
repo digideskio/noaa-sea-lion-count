@@ -8,6 +8,11 @@ import os
 from os import listdir
 from os.path import isfile, join
 
+'''
+Please make sure to use computeCount() to compute the counts.
+It is located at the bottom of the file.
+'''
+
 def loadPriors(dataCSVs):
     cluster_data = {}
     outlier_data = {}
@@ -219,6 +224,15 @@ def obtainFiles():
     files = [join(filedir,f) for f in listdir(filedir) if isfile(join(filedir,f))]
     return files
 
+'''
+This is the function that should be used to compute count estimates.
+:params: locations: a .csv file exactly like coordinates.csv but without the category column.
+:params: groupBool: a boolean to decide if group priors should be used or not.
+:params: cluster: a boolean to decide if the cluster functionality should be used or just a global count of the sealions.
+:params: pups: a boolean to decide if pups were considered in the count/locations or not.
+
+:return: results: a dictionary with as keys the filenames and as values a dictionary. This dictionary has as keys the different categories and as values the counts.
+'''
 def computeCount(locations,groupBool,cluster,pups):
     #dataCSVs = ['cluster_priors.csv', 'outlier_priors.csv', 'sealion_count_priors.csv', 'sealion_group_count_priors.csv', 'cluster_group_priors.csv' ] 
     dataCSVs = obtainFiles()
