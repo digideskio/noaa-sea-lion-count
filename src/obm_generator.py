@@ -37,7 +37,7 @@ def generate_obms(impaths):
     tl.load_weights(input_weights_name)
 
     cnn_output_shape = tl.model.layers[-1].output_shape[1:-1]
-
+    np.random.shuffle(impaths)
     for impath in list(impaths):
         meta = {'filename':utils.get_file_name_part(impath)}
         if os.path.isfile(os.path.join(os.path.join(settings.OBMS_OUTPUT_DIR,meta['filename']+'_obm.h5.npy'))):
@@ -162,7 +162,7 @@ def generate_obms2(impaths):
         np.save(os.path.join(settings.OBMS_OUTPUT_DIR,'train',filename+'_obm_train'), obm)
         
 def generate_obms_fast():
-    cpus = 30
+    cpus = 20
     def chunks(l, n):
         """Yield successive n-sized chunks from lr."""
         chunks = []
