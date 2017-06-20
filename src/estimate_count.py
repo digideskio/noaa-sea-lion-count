@@ -111,6 +111,9 @@ def determineGroup(cluster_size,groups):
         (min,max) = group
         if min <= cluster_size <= max:
             groupNumber = group
+        elif (cluster_size > max) and (max == 1400):
+            groupNumber = group
+            
     return groupNumber
 
 def estimateCount(clusters,cluster_data,outlier_data,groupBool,pups):
