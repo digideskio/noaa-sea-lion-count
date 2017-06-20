@@ -52,6 +52,7 @@ TENSORBOARD_LOGS_DIR = os.path.join(OUTPUT_DIR, 'tb_logs')
 SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 
 OBMS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'obms')
+CNN_COORDINATES_DIR = os.path.join(OUTPUT_DIR, 'cnn_coordinates')
 
 
 # Data augmentation settings
