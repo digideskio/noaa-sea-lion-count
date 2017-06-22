@@ -58,14 +58,13 @@ def computeDistances(coords):
 def readLocations(locations):
     csv_data = {}
     csv_columns = defaultdict(list)
-    filenames = []
+    filenames = set()
     with open(locations) as f:
         reader = csv.DictReader(f)
         data = list(reader)
         for row in data:
             filename = row['filename']
-            if filename not in filenames:
-                filenames.append(filename)
+            filenames.add(filename)
         for filename in filenames:
             for row in data:
                 if row['filename'] == filename:
@@ -81,24 +80,24 @@ def readLocations(locations):
 
 def addEstimates(counts, cluster_size, nearest_size, priors,pups):
     if pups == True:
-        counts['pups'] = int(counts['pups'] + (float(priors[nearest_size]['pups']) * cluster_size))
+        counts['pups'] = round(counts['pups'] + (float(priors[nearest_size]['pups']) * cluster_size))
     else:
-        counts['pups'] = int(counts['pups'] + (cluster_size/(1-float(priors[nearest_size]['pups']))))
-    counts['juveniles'] = int(counts['juveniles'] + (float(priors[nearest_size]['juveniles']) * cluster_size))
-    counts['adult_females'] = int(counts['adult_females'] + (float(priors[nearest_size]['adult_females']) * cluster_size))
-    counts['subadult_males'] = int(counts['subadult_males'] + (float(priors[nearest_size]['subadult_males']) * cluster_size))
-    counts['adult_males'] = int(counts['adult_males'] + (float(priors[nearest_size]['adult_males']) * cluster_size))
+        counts['pups'] = round(counts['pups'] + (cluster_size/(1-float(priors[nearest_size]['pups']))))
+    counts['juveniles'] = round(counts['juveniles'] + (float(priors[nearest_size]['juveniles']) * cluster_size))
+    counts['adult_females'] = round(counts['adult_females'] + (float(priors[nearest_size]['adult_females']) * cluster_size))
+    counts['subadult_males'] = round(counts['subadult_males'] + (float(priors[nearest_size]['subadult_males']) * cluster_size))
+    counts['adult_males'] = round(counts['adult_males'] + (float(priors[nearest_size]['adult_males']) * cluster_size))
     return counts
 
 def addOutlierEstimates(counts, cluster_size, priors,pups):
     if pups == True:
-        counts['pups'] = int(counts['pups'] + (float(priors['pups']) * cluster_size))
+        counts['pups'] = round(counts['pups'] + (float(priors['pups']) * cluster_size))
     else:
-        counts['pups'] = int(counts['pups'] + (cluster_size/(1-float(priors['pups']))))
-    counts['juveniles'] = int(counts['juveniles'] + (float(priors['juveniles']) * cluster_size))
-    counts['adult_females'] = int(counts['adult_females'] + (float(priors['adult_females']) * cluster_size))
-    counts['subadult_males'] = int(counts['subadult_males'] + (float(priors['subadult_males']) * cluster_size))
-    counts['adult_males'] = int(counts['adult_males'] + (float(priors['adult_males']) * cluster_size))
+        counts['pups'] = round(counts['pups'] + (cluster_size/(1-float(priors['pups']))))
+    counts['juveniles'] = round(counts['juveniles'] + (float(priors['juveniles']) * cluster_size))
+    counts['adult_females'] = round(counts['adult_females'] + (float(priors['adult_females']) * cluster_size))
+    counts['subadult_males'] = round(counts['subadult_males'] + (float(priors['subadult_males']) * cluster_size))
+    counts['adult_males'] = round(counts['adult_males'] + (float(priors['adult_males']) * cluster_size))
     return counts
 
 def initiateResults():
@@ -194,6 +193,7 @@ def clusterSeaLions(locations,cluster_data,outlier_data,groupBool,pups):
     clusterPriors = loadCount(cluster_data)
     outlierPriors = loadOutlierCount(outlier_data)
     csv_data = readLocations(locations)
+    results = {}
     for filename in csv_data.keys():
         y_coords = np.array(csv_data[filename]['y_coord'])
         x_coords = np.array(csv_data[filename]['x_coord'])
@@ -206,8 +206,9 @@ def clusterSeaLions(locations,cluster_data,outlier_data,groupBool,pups):
         print('Number of clusters: {}'.format(num_clusters))
 
         counts = estimateCount(y,clusterPriors,outlierPriors,groupBool,pups)
+        results[filename] = counts
 
-    return counts
+    return results
 
 def countSeaLions(locations,count_data,groupBool,pups):
     countPriors = loadCount(count_data)
@@ -223,6 +224,29 @@ def obtainFiles():
     filedir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'data/train/priors'))
     files = [join(filedir,f) for f in listdir(filedir) if isfile(join(filedir,f))]
     return files
+
+def prepareResultsData(results):
+    data = []
+    labels = ['test_id', 'pups', 'juveniles', 'adult_females', 'subadult_males', 'adult_males']
+    data.append(labels)
+    filenames = results.keys()
+    for filename in filenames:
+        counts = results[filename]
+        pups = str(int(counts['pups']))
+        juveniles = str(int(counts['juveniles']))
+        adult_females = str(int(counts['adult_females']))
+        subadult_males = str(int(counts['subadult_males']))
+        adult_males = str(int(counts['adult_males']))
+        entry = [filename, pups, juveniles, adult_females, subadult_males, adult_males]
+        data.append(entry)
+
+    return data
+
+def write2csv(name, data):
+    ofile = open(name,'w', newline='')
+    writer = csv.writer(ofile, delimiter=',', quotechar='"')
+    writer.writerows(data)
+    ofile.close()
 
 '''
 This is the function that should be used to compute count estimates.
@@ -248,14 +272,11 @@ def computeCount(locations,groupBool,cluster,pups):
         else:
             results = countSeaLions(locations,count_data,groupBool,pups)
     
-    #for filename, counts in results.items():
-        #for key in counts.keys():
-            #print("%s: %s\n"%(key,counts[key]))
-            
-    return results
+    results_data = prepareResultsData(results)
+    write2csv("counts_groupBool=%s_cluster=%s_pups=%s.csv"%(str(groupBool),str(cluster),str(pups)),results_data)
 
 
-#computeCount("test.csv",groupBool=True,cluster=False,pups=True)
+
     
 
 
