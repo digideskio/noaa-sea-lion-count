@@ -70,8 +70,8 @@ def test_pdf():
     pass
 
 def generate_test_set_counts_from_coordinates():
-    import counts
-    counts.from_coordinates()
+    import estimate_count
+    estimate_count.from_coordinates()
         
 def generate_heatmap_crops(max_overlap_perc:float):
     crop_size = 400
