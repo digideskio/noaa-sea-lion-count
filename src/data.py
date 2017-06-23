@@ -126,6 +126,27 @@ class Loader:
 
     def get_train_original_mismatched(self):
         return self.train_original_mismatched
+
+    def load_test_coordinates(self):
+        """
+        Load the coordinates CSV for the test dataset.
+        Turn it into a dictionary of lists of coordinates.
+        
+        {image_id: [
+                {
+                    x_coord: n
+                    y_coord: n
+                }
+            ]
+        }
+
+        :return: A dictionary of lists of coordinates.
+        """
+        logger.debug('Loading test image coordinates')
+        d = collections.defaultdict(list)
+        with open(settings.TEST_COORDINATES_CSV, 'r') as file:
+            [d[utils.get_file_name_part(row['filename'])].append(utils.remove_key_from_dict(row, '', 'filename')) for row in csv.DictReader(file)]
+        return dict(d)
         
     def _load_heatmap_crop_images(self):
         import cropping
@@ -426,9 +447,9 @@ class Loader:
             for filename in filenames:
                 name = utils.get_file_name_part(filename)
 
-                if name in self.train_original_mismatched:
-                    # Skip images marked as mismatched
-                    continue
+                #if name in self.train_original_mismatched:
+                #    # Skip images marked as mismatched
+                #    continue
 
                 meta = {
                     'filename': name

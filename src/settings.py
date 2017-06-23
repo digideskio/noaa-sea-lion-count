@@ -37,6 +37,9 @@ TRAIN_MISMATCHED_CSV          = os.path.join(TRAIN_LABELS_DIR, "MismatchedTrainI
 TEST_ORIGINAL_IMAGES_DIR      = os.path.join(TEST_DIR, "original")
 TEST_HEATMAP_DIR              = os.path.join(TEST_DIR, "heatmaps")
 TEST_FEATURES_DIR             = os.path.join(TEST_DIR, "features")
+TEST_PREDICTIONS_DIR          = os.path.join(TEST_DIR, "predictions")
+TEST_COORDINATES_CSV          = os.path.join(TEST_PREDICTIONS_DIR, "coordinates.csv")
+TEST_COUNTS_CSV              = os.path.join(TEST_PREDICTIONS_DIR, "counts.csv")
 
 ## Imagenet metadata
 
