@@ -181,7 +181,6 @@ def determineGroup(cluster_size,groups):
     return groupNumber
 
 def estimateCount(clusters,cluster_data,outlier_data,groupBool,pups):
-    clusters = clusters
     clusterPriors = cluster_data
     outlierPriors = outlier_data
     results = initiateResults()
