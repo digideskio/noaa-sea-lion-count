@@ -235,15 +235,21 @@ obm_paths = sorted(glob.glob(os.path.join(settings.OBMS_OUTPUT_DIR,'*')))
 threshold = 0.3
 window_size = 80
 import pandas as pd
+import numpy as np
+np.random.shuffle(obm_paths)
 for obm_path in obm_paths:
-#    obm_path = obm_paths[0]
-    
+    #obm_path = '/vol/tensusers/vgarciacazorla/MLP/noaa-sea-lion-count/output/obms/16435_obm.h5.npy'
     fname= utils.get_file_name_part(obm_path)
-    try:
-        test_image = scipy.misc.imread(os.path.join(settings.TEST_DIR,'original',fname.split('_')[0]+'.jpg'))
-        
-    except:
+    if os.path.isfile('image_samples/coords_images/'+fname.split('_')[0]+'_test.jpg'):
         continue
+    else:
+        pass#print("MISSING ",fname)
+    if os.path.isfile(os.path.join(settings.CNN_COORDINATES_DIR,fname.split('_')[0]+'_coords.csv')):
+        #print("Skippppp",fname)
+        pass
+    print(1)
+    test_image = scipy.misc.imread(os.path.join(settings.TRAIN_DIR,'original',fname.split('_')[0]+'.jpg'))
+    print(2)
     
     
     aux_height = test_image.shape[0] - test_image.shape[0] % 400 + 400
@@ -273,6 +279,7 @@ for obm_path in obm_paths:
     ncolumns = int(padded.shape[1] / window_size)
     
     df = []
+    print(4)
     for row in range(nrows):
         for column in range(ncolumns):
             xcoord = column*window_size
@@ -330,8 +337,8 @@ for obm_path in obm_paths:
 
     image = ptest_image.copy()
     for ix, row in df.iterrows():
-        cv2.circle(image,(int(row['x_coord']),int(row['y_coord'])),50,(0,0,0),-1)
-    scipy.misc.imsave('delete/'+fname.split('_')[0]+'_test.jpg', image)
+        cv2.circle(image,(int(row['x_coord']),int(row['y_coord'])),20,(200,0,0),-1)
+    scipy.misc.imsave('image_samples/coords_images/'+fname.split('_')[0]+'_test.jpg', image)
     '''
     plt.figure()
     plt.imshow(image, cmap = 'gray')

@@ -14,7 +14,7 @@ from scipy.misc import imresize, imread
 import cv2
 import numpy as np
 from multiprocessing import Pool
-#%matplotlib inline
+#%matplotlib inlineeee
 from itertools import chain, islice,groupby, count
 import utils
 
@@ -38,9 +38,13 @@ def generate_obms(impaths):
 
     cnn_output_shape = tl.model.layers[-1].output_shape[1:-1]
     np.random.shuffle(impaths)
-    for impath in list(impaths):
+    #impaths = []
+    #fixes = [1196, 1652, 7664]
+    #for i in fixes:
+    #    impaths.append('/vol/tensusers/vgarciacazorla/MLP/noaa-sea-lion-count/data/test_st1/original/'+str(i)+'.jpg')
+    for impath in impaths:
         meta = {'filename':utils.get_file_name_part(impath)}
-        if os.path.isfile(os.path.join(os.path.join(settings.OBMS_OUTPUT_DIR,meta['filename']+'_obm.h5.npy'))):
+        if os.path.isfile(os.path.join(os.path.join(settings.OBMS_OUTPUT_DIR,meta['filename']+'_obm.npy'))):
             print("skipping")
             continue
         test_image_original = scipy.misc.imread(impath)
@@ -115,6 +119,7 @@ def generate_obms(impaths):
         
         
         full_obm = final_obm
+        
         trunc_img = padded#[:crop_size*nrows,:crop_size*ncolumns]
         trunc_img = scipy.misc.imresize(trunc_img, (full_obm.shape[0],full_obm.shape[1],3))
         trunc_img = trunc_img / trunc_img.max()
@@ -124,13 +129,14 @@ def generate_obms(impaths):
         obms.append(red_obm)
         img_sum = cv2.addWeighted(src1 = trunc_img, alpha = 1, src2 = red_obm, beta = 0.6, gamma = 0.001)
         img_sum = img_sum / img_sum.max()
-        scipy.misc.imsave('delete/'+meta['filename']+'_obm.jpg',img_sum)
-        settings.logger.info(meta['filename']+" completed in "+str(time.time()-t0)+" seconds")
+        scipy.misc.imsave('image_samples/heatmaps/'+meta['filename']+'_obm.jpg',img_sum)
         if plot:
             plt.figure()
             plt.imshow(img_sum)
             plt.show()
-        np.save(os.path.join(settings.OBMS_OUTPUT_DIR,meta['filename']+'_obm.h5'), final_obm)
+        
+        np.save(os.path.join(settings.OBMS_OUTPUT_DIR,meta['filename']+'_obm'), final_obm)
+        settings.logger.info(meta['filename']+" completed in "+str(time.time()-t0)+" seconds")
 
 def generate_obms2(impaths): 
     data_type = 'original_test'
@@ -162,7 +168,7 @@ def generate_obms2(impaths):
         np.save(os.path.join(settings.OBMS_OUTPUT_DIR,'train',filename+'_obm_train'), obm)
         
 def generate_obms_fast():
-    cpus = 20
+    cpus = 10
     def chunks(l, n):
         """Yield successive n-sized chunks from lr."""
         chunks = []
@@ -171,7 +177,13 @@ def generate_obms_fast():
             chunks.append(l[i*chunk_size:(i+1)*chunk_size])
         return chunks
     
-    impaths = sorted(glob.glob(os.path.join(settings.TEST_DIR,'original','*')))
+    #impaths = sorted(glob.glob(os.path.join(settings.TEST_DIR,'original','*')))
+    impaths = sorted(glob.glob(os.path.join(settings.TRAIN_DIR,'original','*')))
+
+    #generate_obms(impaths)
+    #cd /vol/tensusers/vgarciacazorla/MLP/noaa-sea-lion-count/src
+    #source $HOME/hipo/bin/activate
+    #nice -19 python3 obm_generator.py
     print(len(impaths))
     impaths = np.array(impaths)
     impaths = chunks(impaths, cpus)
@@ -179,7 +191,7 @@ def generate_obms_fast():
     for a in impaths:
         print(len(a))
         print(str(a)[:500])
-    
+    print(cpus,"PROCESSES ")
     with Pool(cpus) as pool:
         pool.starmap(generate_obms,zip(impaths))
         
