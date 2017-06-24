@@ -68,6 +68,10 @@ def test_pdf():
     plt.imshow(pdf)
     plt.show()
     pass
+
+def generate_test_set_counts_from_coordinates():
+    import estimate_count
+    estimate_count.from_coordinates()
         
 def generate_heatmap_crops(max_overlap_perc:float):
     crop_size = 400
@@ -284,6 +288,7 @@ if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
         test_pdf,
+        generate_test_set_counts_from_coordinates,
         generate_region_crops,
         generate_individual_crops,
         generate_heatmap_crops,
