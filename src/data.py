@@ -410,6 +410,95 @@ class Loader:
 
         return images
 
+    def load_full_size_feature_images(self, dataset = "train"):
+        """
+        Load full size density map features.
+
+        The output is:
+
+        [ # A list of dicts for each unique original image, containing all features corresponding to that image
+            {
+                'features': { # Feature bank; a dictionary that groups feature types together (e.g., all LOGs are grouped)
+                    <feature name>: { # A dictionary mapping from specific feature type settings to feature images
+                        <feature setting>: <function to load feature image>
+                    }
+                },
+                'meta': {
+                    'image_name': <image id>,
+
+                    # train only:
+                    'coordinates': [ # A list of sea lion coordinates within the original image
+                        {
+                            'x': <x coordinate>,
+                            'y': <y coordinate>,
+                            'category': <sea lion type>
+                        }
+                    ],
+                    'counts': <total categorized count of sea lions in the image>
+                }
+            }
+        ]
+        """
+
+        images = {}
+
+        if dataset == "train":
+            logger.debug("Loading train set full-size feature images")
+            features_dir = settings.TRAIN_FEATURES_DIR
+            train = True
+
+        elif dataset == "test_st1":
+            logger.debug("Loading test set full-size feature images")
+            features_dir = settings.TEST_FEATURES_DIR
+            train = False
+
+        # Get all images
+        filenames = sorted(glob.glob(os.path.join(features_dir,"*.png")))
+
+        for filename in filenames:
+            # <image id>_<feature name>-<feature setting>.jpg
+            name = utils.get_file_name_part(filename)
+            name_parts = name.split('_')
+
+            image_id = name_parts[0]
+            feature_parts = name_parts[1].split('-')
+
+            feature_name = feature_parts[0]
+            feature_setting = feature_parts[1]
+
+            if image_id in self.train_original_mismatched:
+                # Skip images marked as mismatched
+                continue
+
+            # Add base image if it does not exist yet
+            if image_id not in images:
+                if train:
+                    meta = {
+                        'image_name': image_id,
+                        'coordinates': self.train_original_coordinates[name] if name in self.train_original_coordinates else [],
+                        'counts': self.train_original_counts[name]
+                    }
+                else:
+                    meta = {
+                        'image_name': image_id
+                    }
+
+                images[image_id] = {
+                    'features': {}, 
+                    'meta': meta
+                }
+
+            # Add feature group if it does not exist yet
+            if feature_name not in images[image_id]['features']:
+                images[image_id]['features'][feature_name] = {}
+            
+            # Add feature
+            images[image_id]['features'][feature_name][feature_setting] = (lambda filename: lambda: self.load(filename))(filename)
+
+        # Turn into list
+        images = [img for img in images.values()]
+
+        return images
         
     def load_original_images(self, dataset = "train"):
         """
@@ -433,7 +522,7 @@ class Loader:
                 meta = {
                     'filename': name,
                     'coordinates': self.train_original_coordinates[name] if name in self.train_original_coordinates else [],
-                    'counts': self.train_original_counts
+                    'counts': self.train_original_counts[name]
                 }
 
                 images.append({'x': (lambda filename: lambda: self.load(filename))(filename),

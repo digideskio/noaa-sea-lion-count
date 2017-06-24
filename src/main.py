@@ -56,6 +56,38 @@ def test_density_map_feature_loading():
         plt.show()
         pass
 
+def test_full_feature_map_loading():
+    import matplotlib.pyplot as plt
+
+    loader = data.Loader()
+    
+    features = loader.load_full_size_feature_images('test_st1')
+
+    for img in features:
+        logger.info('Image %s: %s feature(s)' % (img['meta']['image_name'], len(img['features'])))
+        #coords = img['meta']['coordinates']
+
+        blurred = img['features']['gs']['3.5']()
+        #shape = blurred.shape
+
+        #map = utils.sea_lion_density_map(shape[1], shape[0], coords, sigma = 35)
+
+        plt.imshow(blurred.astype("uint8"))
+        plt.show()
+
+        #plt.subplot(1,3,1)
+        #plt.imshow(blurred.astype("uint8"))
+        #plt.axis('off')
+        #plt.subplot(1,3,2)
+        #plt.imshow(map, interpolation='nearest', cmap='viridis')
+        #plt.axis('off')
+        #plt.subplot(1,3,3)
+        #plt.imshow(blurred.astype("uint8"))
+        #plt.imshow(map, interpolation='nearest', cmap='viridis', alpha=0.5)
+        #plt.axis('off')
+        #plt.show()
+        pass
+
 def test_pdf():
     import utils
     import matplotlib.pyplot as plt
@@ -288,6 +320,7 @@ if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
         test_pdf,
+        test_full_feature_map_loading,
         generate_test_set_counts_from_coordinates,
         generate_region_crops,
         generate_individual_crops,
