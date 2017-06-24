@@ -84,7 +84,7 @@ def get_multivariate_normal_pdf(x = [[-5, 5], [-5, 5]], dx = 1, mean = 0, cov = 
 
     return multivariate_normal.pdf(pos, mean, cov)
 
-def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class = {}):
+def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class = {}, scale = 1.0):
     """
     Generate a sea lion density map from coordinates.
 
@@ -94,6 +94,8 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
     :param sigma: The (default) sigma of the densities.
     :param sigma_per_class: A dictionary optionally containing sigmas per class (e.g., a juvenile could
                             have a lower sigma than an adult male). If None, the coordinate is ignored.
+    :param scale: A scale factor with which the generation is sacled. Note that the output will still be
+                  of shape (height, width), but the coordinates and sigma will be scaled accordingly.
     :return: A map with shape (height, width) of bivariate normal densities corresponding to sea lion
              coordinates.
     """
@@ -106,7 +108,11 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
         if sigma_ is None:
             continue
 
-        pdf = get_multivariate_normal_pdf([[0, width-1], [0, height-1]], dx = 1, mean = [coordinate['x_coord'], coordinate['y_coord']], cov = sigma_)
+        pdf = get_multivariate_normal_pdf(
+            [[0, width-1], [0, height-1]],
+            dx = 1,
+            mean = [scale * float(coordinate['x_coord']), scale * float(coordinate['y_coord'])],
+            cov = scale * sigma_)
         map += pdf
 
     return map

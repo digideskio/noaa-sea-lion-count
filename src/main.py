@@ -101,6 +101,21 @@ def test_pdf():
     plt.show()
     pass
 
+def test_density_map():
+    import utils
+    import matplotlib.pyplot as plt
+
+    loader = data.Loader()
+    coords = loader.get_train_original_coordinates()
+
+    for img_coords in coords.values():
+        map = utils.sea_lion_density_map(1000, 700, img_coords, sigma = 35, scale = 0.25)
+
+        logger.info("sum of density map: %s" % sum(sum(map)))
+
+        plt.imshow(map, interpolation='nearest', cmap='viridis')
+        plt.show()
+
 def generate_test_set_counts_from_coordinates():
     import estimate_count
     estimate_count.from_coordinates()
@@ -320,6 +335,7 @@ if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
         test_pdf,
+        test_density_map,
         test_full_feature_map_loading,
         generate_test_set_counts_from_coordinates,
         generate_region_crops,
