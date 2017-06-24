@@ -39,9 +39,10 @@ def test_density_map_feature_loading():
         logger.info('Image %s: %s feature(s)' % (img['meta']['image_name'], len(img['features'])))
         coords = img['meta']['coordinates']
 
-        map = utils.sea_lion_density_map(img['meta']['patch']['width'], img['meta']['patch']['height'], coords, sigma = 35)
+        map = utils.sea_lion_density_map(img['meta']['patch']['width'] / 2, img['meta']['patch']['height'] / 2, coords, sigma = 35, scale = 0.5)
+        logger.info("sum of density map: %s" % sum(sum(map)))
 
-        blurred = img['features']['gs']['0.3']()
+        blurred = img['features']['gs']['3.5']()
 
         plt.subplot(1,3,1)
         plt.imshow(blurred.astype("uint8"))
@@ -54,7 +55,6 @@ def test_density_map_feature_loading():
         plt.imshow(map, interpolation='nearest', cmap='viridis', alpha=0.5)
         plt.axis('off')
         plt.show()
-        pass
 
 def test_full_feature_map_loading():
     import matplotlib.pyplot as plt

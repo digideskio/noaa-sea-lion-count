@@ -100,20 +100,78 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
              coordinates.
     """
     import numpy as np
+    import math
 
     map = np.zeros((height, width))
+
+    interval = 5
+
+    pdfs = {}
 
     for coordinate in coordinates:
         sigma_ = sigma_per_class[coordinate['category']] if coordinate['category'] in sigma_per_class else sigma
         if sigma_ is None:
             continue
 
-        pdf = get_multivariate_normal_pdf(
-            [[0, width-1], [0, height-1]],
-            dx = 1,
-            mean = [scale * float(coordinate['x_coord']), scale * float(coordinate['y_coord'])],
-            cov = scale * sigma_)
-        map += pdf
+        sigma_ = scale * sigma_
+        key = hash(round(sigma_, 4))
+
+        if key not in pdfs:
+            low = math.floor(interval*sigma_)
+            high = math.ceil(interval*sigma_)
+
+            pdfs[key] = {
+                'pdf': get_multivariate_normal_pdf(
+                    [
+                        [-low, high], 
+                        [-low, high]
+                    ],
+                    dx = 1,
+                    mean = [0, 0],
+                    cov = sigma_),
+                'low': low,
+                'high': high
+            }
+
+        d = pdfs[key]
+        pdf = d['pdf']
+        low = d['low']
+        high = d['high']
+
+        x = round(scale * float(coordinate['x_coord']))
+        y = round(scale * float(coordinate['y_coord']))
+        
+        xlow = x - low
+        xhigh = x + high
+        ylow = y - low
+        yhigh = y + high
+
+        pdfxlow = 0
+        pdfxhigh = low + high
+        pdfylow = 0
+        pdfyhigh = low + high
+        
+        if xlow < 0:
+            pdfxlow = -xlow
+            xlow = 0
+
+        if xhigh > width:
+            pdfxhigh -= width - xhigh
+            xhigh = width - 1
+
+        if ylow < 0:
+            pdfylow = -ylow
+            ylow = 0
+
+        if yhigh > height:
+            pdfxhigh -= height - yhigh
+            yhigh = height - 1
+    
+        if pdfxlow > pdfxhigh or pdfylow > pdfyhigh or pdfxhigh > low + high or pdfyhigh > low + high:
+            pass
+            continue
+
+        map[ylow : yhigh, xlow : xhigh] += pdf[pdfylow : pdfyhigh, pdfxlow : pdfxhigh]
 
     return map
 

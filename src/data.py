@@ -357,7 +357,11 @@ class Loader:
             coordinate_parts = name_parts[1].split('-')
             feature_parts = name_parts[2].split('-')
 
-            bounding_box = {'x': int(coordinate_parts[0]), 'y': int(coordinate_parts[1]), 'width': int(coordinate_parts[2]), 'height': int(coordinate_parts[3])}
+            bounding_box = {
+                'x': 2 * int(coordinate_parts[0]), 
+                'y': 2 * int(coordinate_parts[1]), 
+                'width': 2 * int(coordinate_parts[2]), 
+                'height': 2 * int(coordinate_parts[3])}
             feature_name = feature_parts[0]
             feature_setting = feature_parts[1]
 
