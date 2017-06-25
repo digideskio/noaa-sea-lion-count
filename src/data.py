@@ -814,13 +814,21 @@ class CreateDensityMapTransformer(Transformer):
     """
     Create the actual density map for the density map data
     """
+    def __init__(self, sigma_per_class = None, scale = 1.0, *args, **kwargs):
+        super(CreateDensityMapTransformer, self).__init__(*args, **kwargs)
+
+        self.sigma_per_class = sigma_per_class
+        self.scale = scale
+
     def _transform(self, data):
         coords = data['meta']['coordinates']
         m = utils.sea_lion_density_map(
-            data['meta']['patch']['width'],
-            data['meta']['patch']['height'],
+            data['meta']['patch']['width'] / scale,
+            data['meta']['patch']['height'] / scale,
             data['meta']['coordinates'],
-            sigma = 35)
+            sigma = 35,
+            sigma_per_class = self.sigma_per_class,
+            scale = self.scale)
 
         # Add dimension such that m is of shape (width, height, 1)
         data['y'] = np.expand_dims(m, axis=2)

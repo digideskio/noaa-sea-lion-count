@@ -176,7 +176,11 @@ class DensityLearning(Learning):
         return lambda x: x
 
     def data_transformer(self):
-        transformer = data.LoadDensityFeatureTransformer(data.CreateDensityMapTransformer())
+        transformer = data.LoadDensityFeatureTransformer(data.CreateDensityMapTransformer(scale = 0.5, sigma_per_class = {
+                'females': 30,
+                'juveniles': 25,
+                'pups': 20
+            }))
         return transformer
 
 class TransferLearning(Learning):
