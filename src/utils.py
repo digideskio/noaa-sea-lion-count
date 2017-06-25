@@ -129,8 +129,8 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
                     dx = 1,
                     mean = [0, 0],
                     cov = sigma_),
-                'low': low,
-                'high': high
+                'low': int(low),
+                'high': int(high)
             }
 
         d = pdfs[key]
@@ -156,7 +156,7 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
             xlow = 0
 
         if xhigh > width:
-            pdfxhigh -= width - xhigh
+            pdfxhigh -= xhigh - width + 1
             xhigh = width - 1
 
         if ylow < 0:
@@ -164,7 +164,7 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
             ylow = 0
 
         if yhigh > height:
-            pdfxhigh -= height - yhigh
+            pdfyhigh -= yhigh - height + 1
             yhigh = height - 1
     
         if pdfxlow > pdfxhigh or pdfylow > pdfyhigh or pdfxhigh > low + high or pdfyhigh > low + high:
