@@ -125,7 +125,7 @@ class Learning:
         callbacks_list.append(reduce_lr)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 250000
+        unique_instances = 25000
         # Train
         steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
         validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
@@ -155,11 +155,13 @@ class DensityLearning(Learning):
 
     def build(self):
         self.model = keras.models.Sequential()
-        self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 36), kernel_size=4, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(15, kernel_size=4, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(10, kernel_size=4, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(5, kernel_size=4, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(1, kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(8, input_shape=(None, None, 36), kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same", activation='relu'))
 
         loss_ = "mean_absolute_error"
         metrics_ = ["mae"]
@@ -176,7 +178,7 @@ class DensityLearning(Learning):
         return lambda x: x
 
     def data_transformer(self):
-        transformer = data.LoadDensityFeatureTransformer(data.CreateDensityMapTransformer(scale = 0.5, sigma_per_class = {
+        transformer = data.LoadDensityFeatureTransformer(data.CreateDensityMapTransformer(scale = 0.125, sigma_per_class = {
                 'females': 30,
                 'juveniles': 25,
                 'pups': 20
