@@ -333,6 +333,7 @@ def train_density_network():
 
 def predict_density_network():
     import numpy as np
+    import scipy
     import matplotlib.pyplot as plt
     import keras.models
     import data
@@ -355,8 +356,11 @@ def predict_density_network():
         plt.axis('off')
         plt.subplot(1,3,2)
         plt.imshow(y, interpolation='nearest', cmap='viridis')
+        plt.subplot(1,3,3)
+        plt.imshow(gs.astype('uint8'))
+        y_resized = scipy.misc.imresize(y, gs.shape)
+        plt.imshow(y_resized, interpolation='nearest', cmap="viridis", alpha=0.5)
         plt.show()
-
 
 if __name__ == '__main__':
     run(test_iterators,
