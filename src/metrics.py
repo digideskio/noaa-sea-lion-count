@@ -32,3 +32,9 @@ def recall(y_true, y_pred):
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
+
+def positive_mse(y_true, y_pred):
+    zero = K.constant(0)
+    mask = K.maximum(K.cast(K.greater(y_true, zero), dtype='float32'), K.cast(K.greater(y_pred, zero), dtype='float32'))
+    return K.sum(K.square(y_pred*mask - y_true), axis=-1) / (K.sum(mask, axis=-1) + K.constant(1))
+    

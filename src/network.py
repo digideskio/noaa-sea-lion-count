@@ -123,9 +123,13 @@ class Learning:
         #If no improvement after 3 epochs, increase lr
         reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3)
         callbacks_list.append(reduce_lr)
+        
+        if self.arch_name == "FlatFullyConvDensityLearner":
+            lr_sched = keras.callbacks.LearningRateScheduler(lambda iepoch: 0.001 / math.pow(2, iepoch))
+            callbacks_list.append(lr_sched)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 25000
+        unique_instances = 10000
         # Train
         steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
         validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
@@ -155,15 +159,20 @@ class DensityLearning(Learning):
 
     def build(self):
         self.model = keras.models.Sequential()
-        self.model.add(keras.layers.Convolution2D(8, input_shape=(None, None, 36), kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(8, input_shape=(None, None, 36), kernel_size=5, padding="same"))
+        self.model.add(keras.layers.advanced_activations.ELU())
         self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.advanced_activations.ELU())
         self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same", activation='relu'))
-        self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.advanced_activations.ELU())
 
-        loss_ = "mean_absolute_error"
+        loss_ = metrics.positive_mse # "mean_absolute_error"
         metrics_ = ["mae"]
 
         self.model.compile(optimizer=keras.optimizers.SGD(lr=0.001, momentum=0.9), loss=loss_, metrics = metrics_)

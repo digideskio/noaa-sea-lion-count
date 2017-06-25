@@ -327,7 +327,7 @@ def fine_tune_network_perc(task:parameters.one_of('binary', 'type','odm'), netwo
 
 def train_density_network():
     from network import DensityLearning
-    network = DensityLearning(data_type = "density_map_feature_crops", class_balancing = False)
+    network = DensityLearning(data_type = "density_map_feature_crops", class_balancing = False, mini_batch_size=16)
     network.build()
     network.train(epochs = 100)
 
