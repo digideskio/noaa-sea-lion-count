@@ -156,16 +156,16 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
             xlow = 0
 
         if xhigh > width:
-            pdfxhigh -= xhigh - width + 1
-            xhigh = width - 1
+            pdfxhigh -= xhigh - width
+            xhigh = width
 
         if ylow < 0:
             pdfylow = -ylow
             ylow = 0
 
         if yhigh > height:
-            pdfyhigh -= yhigh - height + 1
-            yhigh = height - 1
+            pdfyhigh -= yhigh - height
+            yhigh = height
     
         if pdfxlow > pdfxhigh or pdfylow > pdfyhigh or pdfxhigh > low + high or pdfyhigh > low + high:
             pass
