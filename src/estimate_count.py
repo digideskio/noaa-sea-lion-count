@@ -142,7 +142,7 @@ def addEstimates(counts, cluster_size, nearest_size, priors,pups):
     if pups == True:
         counts['pups'] = round(counts['pups'] + (float(priors[nearest_size]['pups']) * cluster_size))
     else:
-        counts['pups'] = round(counts['pups'] + (cluster_size/(1-float(priors[nearest_size]['pups']))))
+        counts['pups'] = round(counts['pups'] + ((cluster_size/(1-float(priors[nearest_size]['pups'])))-cluster_size))
     counts['juveniles'] = round(counts['juveniles'] + (float(priors[nearest_size]['juveniles']) * cluster_size))
     counts['adult_females'] = round(counts['adult_females'] + (float(priors[nearest_size]['adult_females']) * cluster_size))
     counts['subadult_males'] = round(counts['subadult_males'] + (float(priors[nearest_size]['subadult_males']) * cluster_size))
@@ -153,7 +153,7 @@ def addOutlierEstimates(counts, cluster_size, priors,pups):
     if pups == True:
         counts['pups'] = round(counts['pups'] + (float(priors['pups']) * cluster_size))
     else:
-        counts['pups'] = round(counts['pups'] + (cluster_size/(1-float(priors['pups']))))
+        counts['pups'] = round(counts['pups'] + ((cluster_size/(1-float(priors['pups'])))-cluster_size))
     counts['juveniles'] = round(counts['juveniles'] + (float(priors['juveniles']) * cluster_size))
     counts['adult_females'] = round(counts['adult_females'] + (float(priors['adult_females']) * cluster_size))
     counts['subadult_males'] = round(counts['subadult_males'] + (float(priors['subadult_males']) * cluster_size))
