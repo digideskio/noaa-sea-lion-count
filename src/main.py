@@ -331,6 +331,33 @@ def train_density_network():
     network.build()
     network.train(epochs = 100)
 
+def predict_density_network():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import keras.models
+    import data
+
+    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS)
+    loader = data.Loader()
+    feature_transformer = data.LoadDensityFeatureTransformer()
+
+    imgs = loader.load_full_size_feature_images('test_st1')
+    for img in imgs:
+        d = feature_transformer.apply(img)
+        y = network.predict(np.expand_dims(d['x'], axis=0))
+        y = y[0,:,:,0]
+
+        logger.info('Sum of density: %s' % sum(sum(y)))
+
+        gs = img['features']['gs']['0.7']()
+        plt.subplot(1,3,1)
+        plt.imshow(gs.astype('uint8'))
+        plt.axis('off')
+        plt.subplot(1,3,2)
+        plt.imshow(y, interpolation='nearest', cmap='viridis')
+        plt.show()
+
+
 if __name__ == '__main__':
     run(test_iterators,
         test_density_map_feature_loading,
@@ -347,4 +374,5 @@ if __name__ == '__main__':
         train_top_network,
         fine_tune_network,
         fine_tune_network_perc,
-        train_density_network)
+        train_density_network,
+        predict_density_network)
