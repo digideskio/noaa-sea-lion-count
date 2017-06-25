@@ -167,7 +167,14 @@ def sea_lion_density_map(width, height, coordinates, sigma = 30, sigma_per_class
             pdfyhigh -= yhigh - height
             yhigh = height
 
-        map[ylow : yhigh, xlow : xhigh] += pdf[pdfylow : pdfyhigh, pdfxlow : pdfxhigh]
+        if xlow >= xhigh or ylow >= yhigh:
+            continue # pdf is completely out of bounds
+
+        try:
+            map[ylow : yhigh, xlow : xhigh] += pdf[pdfylow : pdfyhigh, pdfxlow : pdfxhigh]
+        except Exception as e:
+            print("Exception: %s" % e)
+            pass
 
     return map
 

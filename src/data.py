@@ -792,8 +792,31 @@ class LoadDensityFeatureTransformer(Transformer):
     """
     def _transform(self, data):
         features = []
-        features.append(data['features']['ggm']['3.5']())
-        features.append(data['features']['ggm']['5']())
+        features.append(data['features']['dog']['0.7']())
+        features.append(data['features']['dog']['3.5']())
+        features.append(data['features']['dog']['7.5']())
+        features.append(data['features']['dog']['15']())
+
+        features.append(data['features']['gs']['0.7']())
+        features.append(data['features']['gs']['3.5']())
+        features.append(data['features']['gs']['7.5']())
+        features.append(data['features']['gs']['15']())
+
+        features.append(data['features']['hoge1']['0.7']())
+        features.append(data['features']['hoge1']['3.5']())
+        features.append(data['features']['hoge1']['7.5']())
+        features.append(data['features']['hoge1']['15']())
+
+        features.append(data['features']['hoge2']['0.7']())
+        features.append(data['features']['hoge2']['3.5']())
+        features.append(data['features']['hoge2']['7.5']())
+        features.append(data['features']['hoge2']['15']())
+
+        features.append(data['features']['ste1']['0.7']())
+        features.append(data['features']['ste1']['3.5']())
+        features.append(data['features']['ste1']['7.5']())
+        features.append(data['features']['ste1']['15']())
+
 
         shapes = list(map((lambda f: f.shape if len(f.shape) == 3 else (f.shape[0], f.shape[1], 1)), features))
         numChannels = sum(map((lambda shape: shape[2]), shapes))
@@ -802,7 +825,7 @@ class LoadDensityFeatureTransformer(Transformer):
 
         channelsSeen = 0
         for feature, shape in zip(features, shapes):
-            if len(feature.shape) <= 3:
+            if len(feature.shape) < 3:
                 feature = np.expand_dims(feature, axis=2)
             concat[..., channelsSeen:(channelsSeen + shape[2])] = feature
             channelsSeen += shape[2]
@@ -823,8 +846,8 @@ class CreateDensityMapTransformer(Transformer):
     def _transform(self, data):
         coords = data['meta']['coordinates']
         m = utils.sea_lion_density_map(
-            data['meta']['patch']['width'] / scale,
-            data['meta']['patch']['height'] / scale,
+            data['meta']['patch']['width'] * self.scale,
+            data['meta']['patch']['height'] * self.scale,
             data['meta']['coordinates'],
             sigma = 35,
             sigma_per_class = self.sigma_per_class,

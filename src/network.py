@@ -155,7 +155,7 @@ class DensityLearning(Learning):
 
     def build(self):
         self.model = keras.models.Sequential()
-        self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 2), kernel_size=4, padding="same", activation='relu'))
+        self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 36), kernel_size=4, padding="same", activation='relu'))
         self.model.add(keras.layers.Convolution2D(15, kernel_size=4, padding="same", activation='relu'))
         self.model.add(keras.layers.Convolution2D(10, kernel_size=4, padding="same", activation='relu'))
         self.model.add(keras.layers.Convolution2D(5, kernel_size=4, padding="same", activation='relu'))
