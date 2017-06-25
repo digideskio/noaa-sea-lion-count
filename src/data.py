@@ -844,10 +844,12 @@ class CreateDensityMapTransformer(Transformer):
         self.scale = scale
 
     def _transform(self, data):
+        import math
+        
         coords = data['meta']['coordinates']
         m = utils.sea_lion_density_map(
-            data['meta']['patch']['width'] * self.scale,
-            data['meta']['patch']['height'] * self.scale,
+            math.ceil(data['meta']['patch']['width'] * self.scale),
+            math.ceil(data['meta']['patch']['height'] * self.scale),
             data['meta']['coordinates'],
             sigma = 35,
             sigma_per_class = self.sigma_per_class,
