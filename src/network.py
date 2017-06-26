@@ -160,23 +160,25 @@ class DensityLearning(Learning):
     def build(self):
         import keras.backend as K
 
-        #self.model = keras.models.Sequential()
-        #self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same"))
-        #self.model.add(keras.layers.Activation("relu"))
-        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        #self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        #self.model.add(keras.layers.Activation("relu"))
-        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        #self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        #self.model.add(keras.layers.Activation("relu"))
-        #self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
-        #self.model.add(keras.layers.Activation("relu"))
-        #self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
-        #self.model.add(keras.layers.Activation("relu"))
+        """
+        self.model = keras.models.Sequential()
+        self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same"))
+        self.model.add(keras.layers.Activation("relu"))
+        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.Activation("relu"))
+        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.Activation("relu"))
+        self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.Activation("relu"))
+        self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
+        self.model.add(keras.layers.Activation("relu"))
+        """
 
         import layers
 
-        input = keras.models.Input(shape = (None, None, 3))
+        input = keras.models.Input(shape = (None, None, 6))
         x = keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same")(input)
         x = keras.layers.Activation("relu")(x)
         x = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same")(x)
@@ -190,7 +192,6 @@ class DensityLearning(Learning):
         x = keras.layers.Convolution2D(1, kernel_size=5, padding="same")(x)
         x = keras.layers.Activation("relu", name="density")(x)
         count = layers.DensityCount(name="count")(x)
-
 
         self.model = keras.models.Model(inputs=input, outputs=[x, count])
 
@@ -220,11 +221,13 @@ class DensityLearning(Learning):
         loss_ = metrics.per_pixel_squared_error
         metrics_ = ["mae", metrics.count_diff]
 
-        optimizer = keras.optimizers.Adam(lr=0.0002)
+        optimizer = keras.optimizers.Adam(lr=0.001)
 
         #self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0003, momentum=0.9), loss=loss_, metrics = metrics_)
         #self.model.compile(optimizer=optimizer, loss=loss_, metrics = metrics_)
-        self.model.compile(optimizer=optimizer, loss={'density': loss_, 'count': 'mae'})
+        self.model.compile(optimizer=optimizer,
+                           loss={'density': loss_, 'count': 'mae'},
+                           loss_weights={'density': 1.0, 'count':  0.1})
 
     def print_layers_info(self):
         """
