@@ -44,5 +44,5 @@ def mae_per_class(y_true, y_pred):
     pos_mae = K.sum(K.abs(y_pred*pos_mask - y_true), axis=-1) / (K.sum(pos_mask, axis=-1) + K.constant(1))
     neg_mask = K.cast(K.equal(y_true, zero), dtype='float32')
     neg_mae = K.sum(K.abs(y_pred*neg_mask), axis=-1) / (K.sum(neg_mask, axis=-1) + K.constant(1))
-    return pos_mae + neg_mae
+    return pos_mae + K.sqrt(neg_mae)
     
