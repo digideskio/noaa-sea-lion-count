@@ -346,7 +346,8 @@ class Loader:
         crops_dir = settings.DENSITY_MAP_FEATURE_CROPS_DIR
 
         # Get all images
-        filenames = sorted(glob.glob(os.path.join(crops_dir,"*.png")))
+        #filenames = sorted(glob.glob(os.path.join(crops_dir,"*.png")))
+        filenames = sorted([f for f in os.listdir(crops_dir) if f[-4:] == ".png"])
         n = 0
         for filename in filenames:
             # <image id>_<crop x coordinate>-<crop y coordinate>-<crop width>-<crop height>_<feature name>-<feature setting>.jpg
