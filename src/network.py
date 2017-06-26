@@ -124,9 +124,9 @@ class Learning:
         reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3)
         callbacks_list.append(reduce_lr)
         
-        if self.arch_name == "FlatFullyConvDensityLearner":
-            lr_sched = keras.callbacks.LearningRateScheduler(lambda iepoch: 0.001 / math.pow(2, iepoch))
-            callbacks_list.append(lr_sched)
+        #if self.arch_name == "FlatFullyConvDensityLearner":
+            #lr_sched = keras.callbacks.LearningRateScheduler(lambda iepoch: 0.001 / math.pow(2, iepoch))
+            #callbacks_list.append(lr_sched)
             
         #TODO get unqie_instances automatically 
         unique_instances = 10000
@@ -160,22 +160,22 @@ class DensityLearning(Learning):
     def build(self):
         self.model = keras.models.Sequential()
         self.model.add(keras.layers.Convolution2D(8, input_shape=(None, None, 36), kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.advanced_activations.LeakyReLU())
         self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
         self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.advanced_activations.LeakyReLU())
         self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
         self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.advanced_activations.LeakyReLU())
         self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.advanced_activations.LeakyReLU())
         self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.ELU())
+        self.model.add(keras.layers.advanced_activations.LeakyReLU())
 
-        loss_ = metrics.positive_mse # "mean_absolute_error"
+        loss_ = metrics.mae_per_class
         metrics_ = ["mae"]
 
-        self.model.compile(optimizer=keras.optimizers.SGD(lr=0.001, momentum=0.9), loss=loss_, metrics = metrics_)
+        self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0003, momentum=0.9), loss=loss_, metrics = metrics_)
 
     def print_layers_info(self):
         """

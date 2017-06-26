@@ -33,8 +33,16 @@ def recall(y_true, y_pred):
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
-def positive_mse(y_true, y_pred):
+def positive_mae(y_true, y_pred):
     zero = K.constant(0)
     mask = K.maximum(K.cast(K.greater(y_true, zero), dtype='float32'), K.cast(K.greater(y_pred, zero), dtype='float32'))
-    return K.sum(K.square(y_pred*mask - y_true), axis=-1) / (K.sum(mask, axis=-1) + K.constant(1))
+    return K.sum(K.abs(y_pred*mask - y_true), axis=-1) / (K.sum(mask, axis=-1) + K.constant(1))
+    
+def mae_per_class(y_true, y_pred):
+    zero = K.constant(0)
+    pos_mask = K.cast(K.greater(y_true, zero), dtype='float32')
+    pos_mae = K.sum(K.abs(y_pred*pos_mask - y_true), axis=-1) / (K.sum(pos_mask, axis=-1) + K.constant(1))
+    neg_mask = K.cast(K.equal(y_true, zero), dtype='float32')
+    neg_mae = K.sum(K.abs(y_pred*neg_mask), axis=-1) / (K.sum(neg_mask, axis=-1) + K.constant(1))
+    return pos_mae + neg_mae
     
