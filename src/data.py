@@ -406,7 +406,7 @@ class Loader:
                 images[key]['features'][feature_name] = {}
             
             # Add feature
-            images[key]['features'][feature_name][feature_setting] = (lambda filename: lambda: self.load(filename))(filename)
+            images[key]['features'][feature_name][feature_setting] = (lambda filename: lambda: self.load(filename))(os.path.join(crops_dir, filename))
             
         # Turn into list
         images = [img for img in images.values()]
