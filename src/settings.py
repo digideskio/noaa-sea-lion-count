@@ -81,7 +81,7 @@ INDIVIDUAL_HEATMAP_NETWORK_WEIGHT_NAME = "indiv-resnet-lay102-ep004-tloss0.0311-
 
 ## Density CNN settings
 #DENSITY_NETWORK_WEIGHTS = os.path.join(WEIGHTS_DIR, "FlatFullyConvDensityLearner-lay7-density_map_feature_crops-ep000-tloss0.0511-vloss0.0016.hdf5")
-DENSITY_NETWORK_WEIGHTS = os.path.join(WEIGHTS_DIR, "FlatFullyConvDensityLearner-lay12-density_map_feature_crops-ep000-tloss0.2534-vloss0.2029.hdf5")
+DENSITY_NETWORK_WEIGHTS = os.path.join(WEIGHTS_DIR, "FlatFullyConvDensityLearner-lay13-density_map_feature_crops-ep008-tloss3.8823-vloss3.4159.hdf5")
 
 # Logging
 ## create logger

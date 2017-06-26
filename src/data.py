@@ -810,7 +810,7 @@ class LoadDensityFeatureTransformer(Transformer):
         #features.append(data['features']['dog']['15']())
 
         features.append(data['features']['gs']['0.7']())
-        #features.append(data['features']['gs']['3.5']())
+        features.append(data['features']['gs']['3.5']())
         #features.append(data['features']['gs']['7.5']())
         #features.append(data['features']['gs']['15']())
 
