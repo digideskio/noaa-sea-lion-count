@@ -36,6 +36,9 @@ def recall(y_true, y_pred):
 def mae2d(y_true, y_pred):
     return K.mean(K.abs(y_pred - y_true), axis=None)
 
+def per_pixel_squared_error(y_true, y_pred):
+    return K.square(y_pred - y_true)
+
 def positive_mae(y_true, y_pred):
     zero = K.constant(0)
     mask = K.maximum(K.cast(K.greater(y_true, zero), dtype='float32'), K.cast(K.greater(y_pred, zero), dtype='float32'))
