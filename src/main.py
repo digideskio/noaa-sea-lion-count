@@ -348,6 +348,7 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
 
     network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {
         'mae2d': metrics.mae2d,
+        "per_pixel_squared_error": metrics.per_pixel_squared_error,
         'positive_mae': metrics.positive_mae,
         'mae_per_class': metrics.mae_per_class,
         'count_diff': metrics.count_diff})
