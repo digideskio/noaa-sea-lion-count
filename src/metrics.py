@@ -37,7 +37,7 @@ def mae2d(y_true, y_pred):
     return K.mean(K.abs(y_pred - y_true), axis=None)
 
 def per_pixel_squared_error(y_true, y_pred):
-    return K.square(y_pred - y_true)
+    return K.mean(K.square(y_pred - y_true), axis=None)
 
 def positive_mae(y_true, y_pred):
     zero = K.constant(0)
