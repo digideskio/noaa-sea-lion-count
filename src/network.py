@@ -174,7 +174,7 @@ class DensityLearning(Learning):
         #self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
         #self.model.add(keras.layers.Activation("relu"))
 
-
+        import layers
 
         input = keras.models.Input(shape = (None, None, 3))
         x = keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same")(input)
@@ -189,9 +189,7 @@ class DensityLearning(Learning):
         x = keras.layers.Activation("relu")(x)
         x = keras.layers.Convolution2D(1, kernel_size=5, padding="same")(x)
         x = keras.layers.Activation("relu", name="density")(x)
-        count = keras.layers.Lambda(lambda density: K.sum(density, axis=(1,2,3)), 
-                                    output_shape=lambda s: (s[0], 1,),
-                                    name="count")(x)
+        count = layers.DensityCount(name="count")(x)
 
 
         self.model = keras.models.Model(inputs=input, outputs=[x, count])
