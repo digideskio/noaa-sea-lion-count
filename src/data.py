@@ -829,7 +829,7 @@ class LoadDensityFeatureTransformer(Transformer):
         for feature, shape in zip(features, shapes):
             if len(feature.shape) < 3:
                 feature = np.expand_dims(feature, axis=2)
-            concat[..., channelsSeen:(channelsSeen + shape[2])] = feature
+            concat[..., channelsSeen:(channelsSeen + shape[2])] = feature / 255 - 0.5
             channelsSeen += shape[2]
 
         data['x'] = concat
