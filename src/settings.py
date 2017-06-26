@@ -39,7 +39,7 @@ TEST_HEATMAP_DIR              = os.path.join(TEST_DIR, "heatmaps")
 TEST_FEATURES_DIR             = os.path.join(TEST_DIR, "features")
 TEST_PREDICTIONS_DIR          = os.path.join(TEST_DIR, "predictions")
 TEST_COORDINATES_CSV          = os.path.join(TEST_PREDICTIONS_DIR, "coordinates.csv")
-TEST_COUNTS_CSV              = os.path.join(TEST_PREDICTIONS_DIR, "counts.csv")
+TEST_COUNTS_CSV               = os.path.join(TEST_PREDICTIONS_DIR, "counts.csv")
 
 ## Imagenet metadata
 
@@ -56,6 +56,8 @@ SUBMISSIONS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "submissions")
 
 OBMS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'obms')
 CNN_COORDINATES_DIR = os.path.join(OUTPUT_DIR, 'cnn_coordinates')
+
+PREDICTED_DENSITY_MAPS_DIR = os.path.join(OUTPUT_DIR, 'density_maps', strftime("%Y%m%dT%H%M%S"))
 
 
 # Data augmentation settings
