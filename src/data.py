@@ -710,17 +710,27 @@ class DataIterator(Iterator):
                 batch_m.append(d['m'])
             if 'y' in d:
                 if batch_y is None:
-                    #Check what kind of Y are we generating
-                    if type(d['y']) == np.ndarray and len(d['y'].shape) > 1:
-                        #Generating heatmaps
-                        batch_y = np.zeros((current_batch_size, d['y'].shape[0], d['y'].shape[1], 1))
-                    else:
-                        #Not generating heatmaps
-                        batch_y = np.zeros(current_batch_size)
-                batch_y[i] = self.class_transformation(d['y'])
+                    if not isinstance(d['y'], dict):
+                        d['y'] = {'y': d['y']}
+
+                    batch_y = {}
+                    for key, value in d['y'].items():
+                        #Check what kind of Y are we generating
+                        if type(value) == np.ndarray and len(value.shape) > 1:
+                            #Generating heatmaps
+                            batch_y[key] = np.zeros((current_batch_size, value.shape[0], value.shape[1], 1))
+                        else:
+                            #Not generating heatmaps
+                            batch_y[key] = np.zeros(current_batch_size)
+                for key, value in d['y'].items():
+                    batch_y[key][i] = self.class_transformation(value)
+
         #batch_x = preprocess_input(batch_x)
         if batch_y is not None:
             #For now don't return batch_m in this case
+            if len(batch_y.values()) == 1:
+                batch_y = batch_y['y']
+
             return batch_x, batch_y
         else:
             
@@ -794,30 +804,30 @@ class LoadDensityFeatureTransformer(Transformer):
     """
     def _transform(self, data):
         features = []
-        features.append(data['features']['dog']['0.7']())
-        features.append(data['features']['dog']['3.5']())
-        features.append(data['features']['dog']['7.5']())
-        features.append(data['features']['dog']['15']())
+        #features.append(data['features']['dog']['0.7']())
+        #features.append(data['features']['dog']['3.5']())
+        #features.append(data['features']['dog']['7.5']())
+        #features.append(data['features']['dog']['15']())
 
         features.append(data['features']['gs']['0.7']())
-        features.append(data['features']['gs']['3.5']())
-        features.append(data['features']['gs']['7.5']())
-        features.append(data['features']['gs']['15']())
+        #features.append(data['features']['gs']['3.5']())
+        #features.append(data['features']['gs']['7.5']())
+        #features.append(data['features']['gs']['15']())
 
-        features.append(data['features']['hoge1']['0.7']())
-        features.append(data['features']['hoge1']['3.5']())
-        features.append(data['features']['hoge1']['7.5']())
-        features.append(data['features']['hoge1']['15']())
+        #features.append(data['features']['hoge1']['0.7']())
+        #features.append(data['features']['hoge1']['3.5']())
+        #features.append(data['features']['hoge1']['7.5']())
+        #features.append(data['features']['hoge1']['15']())
 
-        features.append(data['features']['hoge2']['0.7']())
-        features.append(data['features']['hoge2']['3.5']())
-        features.append(data['features']['hoge2']['7.5']())
-        features.append(data['features']['hoge2']['15']())
+        #features.append(data['features']['hoge2']['0.7']())
+        #features.append(data['features']['hoge2']['3.5']())
+        #features.append(data['features']['hoge2']['7.5']())
+        #features.append(data['features']['hoge2']['15']())
 
-        features.append(data['features']['ste1']['0.7']())
-        features.append(data['features']['ste1']['3.5']())
-        features.append(data['features']['ste1']['7.5']())
-        features.append(data['features']['ste1']['15']())
+        #features.append(data['features']['ste1']['0.7']())
+        #features.append(data['features']['ste1']['3.5']())
+        #features.append(data['features']['ste1']['7.5']())
+        #features.append(data['features']['ste1']['15']())
 
 
         shapes = list(map((lambda f: f.shape if len(f.shape) == 3 else (f.shape[0], f.shape[1], 1)), features))
@@ -859,6 +869,17 @@ class CreateDensityMapTransformer(Transformer):
 
         # Add dimension such that m is of shape (width, height, 1)
         data['y'] = np.expand_dims(m, axis=2)
+        return data
+
+class DensitySumTransformer(Transformer):
+    """
+    """
+
+    def _transform(self, data):
+        data['y'] = {
+            'density': data['y'],
+            'count': sum(sum(data['y']))
+        }
         return data
 
 class SyncedAugmentationTransformer(Transformer):
