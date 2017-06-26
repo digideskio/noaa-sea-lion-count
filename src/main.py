@@ -346,7 +346,11 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
         if not os.path.exists(settings.PREDICTED_DENSITY_MAPS_DIR):
             os.makedirs(settings.PREDICTED_DENSITY_MAPS_DIR)
 
-    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {'positive_mae': metrics.positive_mae, 'mae_per_class': metrics.mae_per_class})
+    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {
+        'mae2d': metrics.mae2d,
+        'positive_mae': metrics.positive_mae,
+        'mae_per_class': metrics.mae_per_class,
+        'count_diff': metrics.count_diff})
     loader = data.Loader()
     feature_transformer = data.LoadDensityFeatureTransformer()
 
