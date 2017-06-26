@@ -337,8 +337,9 @@ def predict_density_network():
     import matplotlib.pyplot as plt
     import keras.models
     import data
+    import metrics
 
-    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS)
+    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {'positive_mse': metrics.positive_mse})
     loader = data.Loader()
     feature_transformer = data.LoadDensityFeatureTransformer()
 
