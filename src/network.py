@@ -129,7 +129,7 @@ class Learning:
             #callbacks_list.append(lr_sched)
             
         #TODO get unqie_instances automatically 
-        unique_instances = 10000
+        unique_instances = 5000
         # Train
         steps_per_epoch = math.ceil(0.7*unique_instances/self.mini_batch_size)
         validation_steps = math.ceil(0.3*unique_instances/self.mini_batch_size) if self.validate else None
@@ -158,24 +158,75 @@ class DensityLearning(Learning):
         self.arch_name = "FlatFullyConvDensityLearner"
 
     def build(self):
-        self.model = keras.models.Sequential()
-        self.model.add(keras.layers.Convolution2D(8, input_shape=(None, None, 36), kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.LeakyReLU())
-        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.LeakyReLU())
-        self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
-        self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.LeakyReLU())
-        self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.LeakyReLU())
-        self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
-        self.model.add(keras.layers.advanced_activations.LeakyReLU())
+        import keras.backend as K
 
-        loss_ = metrics.mae_per_class
-        metrics_ = ["mae"]
+        #self.model = keras.models.Sequential()
+        #self.model.add(keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.Activation("relu"))
+        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        #self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.Activation("relu"))
+        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        #self.model.add(keras.layers.Convolution2D(16, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.Activation("relu"))
+        #self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.Activation("relu"))
+        #self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.Activation("relu"))
 
-        self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0003, momentum=0.9), loss=loss_, metrics = metrics_)
+
+
+        input = keras.models.Input(shape = (None, None, 3))
+        x = keras.layers.Convolution2D(20, input_shape=(None, None, 3), kernel_size=5, padding="same")(input)
+        x = keras.layers.Activation("relu")(x)
+        x = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same")(x)
+        x = keras.layers.Convolution2D(16, kernel_size=5, padding="same")(x)
+        x = keras.layers.Activation("relu")(x)
+        x = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same")(x)
+        x = keras.layers.Convolution2D(16, kernel_size=5, padding="same")(x)
+        x = keras.layers.Activation("relu")(x)
+        x = keras.layers.Convolution2D(8, kernel_size=5, padding="same")(x)
+        x = keras.layers.Activation("relu")(x)
+        x = keras.layers.Convolution2D(1, kernel_size=5, padding="same")(x)
+        x = keras.layers.Activation("relu", name="density")(x)
+        count = keras.layers.Lambda(lambda density: K.sum(density, axis=(1,2,3)), 
+                                    output_shape=lambda s: (s[0], 1,),
+                                    name="count")(x)
+
+
+        self.model = keras.models.Model(inputs=input, outputs=[x, count])
+
+        #self.model.add(keras.layers.Convolution2D(32, input_shape=(None, None, 3), kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+
+        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        #self.model.add(keras.layers.Convolution2D(64, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+        #self.model.add(keras.layers.Convolution2D(128, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+
+        #self.model.add(keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), padding="same"))
+        #self.model.add(keras.layers.Convolution2D(128, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+        #self.model.add(keras.layers.Convolution2D(128, kernel_size=5, padding="same")) #FC
+
+        #self.model.add(keras.layers.UpSampling2D(size=(2, 2)))
+        #self.model.add(keras.layers.Convolution2D(8, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+        #self.model.add(keras.layers.UpSampling2D(size=(2, 2)))
+        #self.model.add(keras.layers.Convolution2D(1, kernel_size=5, padding="same"))
+        #self.model.add(keras.layers.advanced_activations.LeakyReLU())
+
+
+        #loss_ = metrics.mae_per_class
+        loss_ = metrics.per_pixel_squared_error
+        metrics_ = ["mae", metrics.count_diff]
+
+        optimizer = keras.optimizers.Adam(lr=0.0002)
+
+        #self.model.compile(optimizer=keras.optimizers.SGD(lr=0.0003, momentum=0.9), loss=loss_, metrics = metrics_)
+        #self.model.compile(optimizer=optimizer, loss=loss_, metrics = metrics_)
+        self.model.compile(optimizer=optimizer, loss={'density': loss_, 'count': 'mae'})
 
     def print_layers_info(self):
         """
@@ -191,7 +242,7 @@ class DensityLearning(Learning):
                 'females': 30,
                 'juveniles': 25,
                 'pups': 20
-            }))
+            }, next=data.DensitySumTransformer()))
         return transformer
 
 class TransferLearning(Learning):
