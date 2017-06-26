@@ -458,7 +458,7 @@ class Loader:
             train = False
 
         # Get all images
-        filenames = sorted(glob.glob(os.path.join(features_dir,"*.png")))
+        filenames = glob.glob(os.path.join(features_dir,"*.png"))
 
         for filename in filenames:
             # <image id>_<feature name>-<feature setting>.jpg
@@ -502,6 +502,7 @@ class Loader:
 
         # Turn into list
         images = [img for img in images.values()]
+        images = sorted(images, key = lambda img: img['meta']['image_name'])
 
         return images
         
