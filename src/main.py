@@ -331,37 +331,57 @@ def train_density_network():
     network.build()
     network.train(epochs = 100)
 
-def predict_density_network():
+def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
     import numpy as np
     import scipy
-    import matplotlib.pyplot as plt
     import keras.models
     import data
     import metrics
 
-    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {'positive_mse': metrics.positive_mse})
+    if plot:
+        import matplotlib.pyplot as plt
+
+    if save:
+        import os, gzip, pickle
+        if not os.path.exists(settings.PREDICTED_DENSITY_MAPS_DIR):
+            os.makedirs(settings.PREDICTED_DENSITY_MAPS_DIR)
+
+    network = keras.models.load_model(settings.DENSITY_NETWORK_WEIGHTS, custom_objects = {'positive_mse': metrics.positive_mae})
     loader = data.Loader()
     feature_transformer = data.LoadDensityFeatureTransformer()
 
     imgs = loader.load_full_size_feature_images('test_st1')
-    for img in imgs:
+
+    if end == -1:
+        end = len(imgs) - 1
+
+    for idx in range(start, end+1):
+        img = imgs[idx]
+
         d = feature_transformer.apply(img)
         y = network.predict(np.expand_dims(d['x'], axis=0))
         y = y[0,:,:,0]
 
         logger.info('Sum of density: %s' % sum(sum(y)))
 
-        gs = img['features']['gs']['0.7']()
-        plt.subplot(1,3,1)
-        plt.imshow(gs.astype('uint8'))
-        plt.axis('off')
-        plt.subplot(1,3,2)
-        plt.imshow(y, interpolation='nearest', cmap='viridis')
-        plt.subplot(1,3,3)
-        plt.imshow(gs.astype('uint8'))
-        y_resized = scipy.misc.imresize(y, gs.shape)
-        plt.imshow(y_resized, interpolation='nearest', cmap="viridis", alpha=0.5)
-        plt.show()
+        if save:
+            fp = gzip.open(os.path.join(settings.PREDICTED_DENSITY_MAPS_DIR, "%s.data" % img['meta']['image_name']), 'wb')
+            pickle.dump(y, fp)
+            fp.close()
+
+        if plot:
+            gs = img['features']['gs']['0.7']()
+            plt.subplot(1,3,1)
+            plt.imshow(gs.astype('uint8'))
+            plt.axis('off')
+            plt.subplot(1,3,2)
+            plt.imshow(y, interpolation='nearest', cmap='viridis')
+            plt.subplot(1,3,3)
+            plt.imshow(gs.astype('uint8'))
+            y_resized = scipy.misc.imresize(y, gs.shape)
+            plt.imshow(y_resized, interpolation='nearest', cmap="viridis", alpha=0.5)
+            plt.show()
+
 
 if __name__ == '__main__':
     run(test_iterators,
