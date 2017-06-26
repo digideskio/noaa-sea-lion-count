@@ -39,7 +39,7 @@ def mae2d(y_true, y_pred):
 def positive_mae(y_true, y_pred):
     zero = K.constant(0)
     mask = K.maximum(K.cast(K.greater(y_true, zero), dtype='float32'), K.cast(K.greater(y_pred, zero), dtype='float32'))
-    return K.sum(K.abs(y_pred*mask - y_true), axis=-1) / (K.sum(mask, axis=-1) + K.constant(1))
+    return K.sum(K.abs(y_pred*mask - y_true), axis=None) / (K.sum(mask, axis=None) + K.constant(1))
     
 def mae_per_class(y_true, y_pred):
     zero = K.constant(0)
@@ -50,4 +50,4 @@ def mae_per_class(y_true, y_pred):
     return pos_mae + K.sqrt(neg_mae)
 
 def count_diff(y_true, y_pred):
-    return K.abs(K.sum(y_pred, axis=None) - K.sum(y_true, axis=None))
+    return K.mean(K.sum(y_pred, axis=(1,2,3)) - K.sum(y_true, axis=(1,2,3)), axis=None)
