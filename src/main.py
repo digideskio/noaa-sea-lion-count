@@ -337,6 +337,7 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
     import keras.models
     import data
     import metrics
+    import layers
 
     if plot:
         import matplotlib.pyplot as plt
@@ -351,7 +352,8 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
         "per_pixel_squared_error": metrics.per_pixel_squared_error,
         'positive_mae': metrics.positive_mae,
         'mae_per_class': metrics.mae_per_class,
-        'count_diff': metrics.count_diff})
+        'count_diff': metrics.count_diff,
+        'DensityCount': layers.DensityCount})
     loader = data.Loader()
     feature_transformer = data.LoadDensityFeatureTransformer()
 
@@ -365,9 +367,12 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
 
         d = feature_transformer.apply(img)
         y = network.predict(np.expand_dims(d['x'], axis=0))
-        y = y[0,:,:,0]
+        y_img = y[0]
+        y_img = y_img[0,:,:,0]
+        y_count = y[1]
 
-        logger.info('Sum of density: %s' % sum(sum(y)))
+        logger.info('Sum of density, calculated: %s from network: %s' % (sum(sum(y_img)), y_count))
+
 
         if save:
             fp = gzip.open(os.path.join(settings.PREDICTED_DENSITY_MAPS_DIR, "%s.data" % img['meta']['image_name']), 'wb')
@@ -380,10 +385,10 @@ def predict_density_network(*, plot = True, save = False, start = 0, end = -1):
             plt.imshow(gs.astype('uint8'))
             plt.axis('off')
             plt.subplot(1,3,2)
-            plt.imshow(y, interpolation='nearest', cmap='viridis')
+            plt.imshow(y_img, interpolation='nearest', cmap='viridis')
             plt.subplot(1,3,3)
             plt.imshow(gs.astype('uint8'))
-            y_resized = scipy.misc.imresize(y, gs.shape)
+            y_resized = scipy.misc.imresize(y_img, gs.shape)
             plt.imshow(y_resized, interpolation='nearest', cmap="viridis", alpha=0.5)
             plt.show()
 
