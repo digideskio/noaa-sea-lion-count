@@ -709,10 +709,10 @@ class DataIterator(Iterator):
             if 'm' in d:
                 batch_m.append(d['m'])
             if 'y' in d:
-                if batch_y is None:
-                    if not isinstance(d['y'], dict):
-                        d['y'] = {'y': d['y']}
+                if not isinstance(d['y'], dict):
+                    d['y'] = {'y': d['y']}
 
+                if batch_y is None:
                     batch_y = {}
                     for key, value in d['y'].items():
                         #Check what kind of Y are we generating
